@@ -25,6 +25,7 @@ $GitExe = Resolve-Tool "git" @(
   "C:\Program Files (x86)\Git\cmd\git.exe"
 )
 $GhExe = Resolve-Tool "gh" @(
+  "E:\GitHub CLI\gh.exe",
   "C:\Program Files\GitHub CLI\gh.exe"
 )
 
