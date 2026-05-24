@@ -1,0 +1,3496 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ziinc Tool Box</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --blue: #1a73e8;
+      --blue-quiet: #e8f0fe;
+      --green: #188038;
+      --yellow: #fbbc04;
+      --red: #d93025;
+      --ink: #202124;
+      --muted: #5f6368;
+      --line: #dadce0;
+      --surface: #ffffff;
+      --bg: #f8fafd;
+      --shadow: 0 1px 2px rgba(60, 64, 67, .16), 0 1px 3px rgba(60, 64, 67, .08);
+      --shadow-strong: 0 6px 18px rgba(60, 64, 67, .16);
+      font-family: Inter, Roboto, "Google Sans", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #ffffff 0, var(--bg) 23rem);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    .app-shell {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      display: grid;
+      grid-template-columns: repeat(2, 13px);
+      grid-template-rows: repeat(2, 13px);
+      gap: 3px;
+      width: 34px;
+      height: 34px;
+      padding: 2px;
+      flex: 0 0 auto;
+    }
+
+    .brand-mark span {
+      border-radius: 50%;
+    }
+
+    .brand-mark span:nth-child(1) {
+      background: var(--blue);
+    }
+
+    .brand-mark span:nth-child(2) {
+      background: var(--red);
+    }
+
+    .brand-mark span:nth-child(3) {
+      background: var(--yellow);
+    }
+
+    .brand-mark span:nth-child(4) {
+      background: var(--green);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 32px);
+      line-height: 1.18;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .date-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 9px 14px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, .82);
+      white-space: nowrap;
+      box-shadow: 0 1px 1px rgba(60, 64, 67, .06);
+    }
+
+    .app-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 0 0 24px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, .86);
+      box-shadow: 0 1px 1px rgba(60, 64, 67, .06);
+      width: fit-content;
+      max-width: 100%;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .nav-item {
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      min-height: 38px;
+      padding: 0 16px;
+      cursor: pointer;
+      transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .nav-item:hover {
+      background: var(--blue-quiet);
+      color: var(--blue);
+    }
+
+    .nav-item[aria-current="page"] {
+      background: var(--blue);
+      color: #fff;
+      box-shadow: var(--shadow);
+      font-weight: 600;
+    }
+
+    .nav-item:focus-visible,
+    .text-button:focus-visible,
+    .primary-button:focus-visible,
+    .action-button:focus-visible,
+    .ghost-button:focus-visible,
+    .icon-button:focus-visible,
+    .swap-button:focus-visible {
+      outline: 2px solid var(--blue);
+      outline-offset: 2px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .layout.profile-page,
+    .layout.tool-page {
+      grid-template-columns: 1fr;
+    }
+
+    .page-hidden {
+      display: none !important;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .profile {
+      overflow: hidden;
+    }
+
+    .profile-cover {
+      min-height: 112px;
+      background:
+        linear-gradient(135deg, rgba(26, 115, 232, .95), rgba(52, 168, 83, .86)),
+        repeating-linear-gradient(45deg, rgba(255, 255, 255, .18) 0 2px, transparent 2px 12px);
+      position: relative;
+    }
+
+    .avatar {
+      width: 92px;
+      height: 92px;
+      border: 4px solid #fff;
+      border-radius: 50%;
+      background: #fff;
+      color: var(--blue);
+      box-shadow: var(--shadow-strong);
+      display: grid;
+      place-items: center;
+      font-size: 36px;
+      font-weight: 700;
+      position: absolute;
+      left: 24px;
+      bottom: -42px;
+      cursor: pointer;
+      overflow: hidden;
+      padding: 0;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .avatar::after {
+      content: "✎";
+      position: absolute;
+      right: 2px;
+      bottom: 2px;
+      width: 26px;
+      height: 26px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      background: var(--blue);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .avatar.has-image .avatar-text {
+      opacity: 0;
+    }
+
+    .avatar-input {
+      display: none;
+    }
+
+    .file-input-hidden {
+      display: none;
+    }
+
+    .profile-body {
+      padding: 56px 24px 24px;
+    }
+
+    .profile h2,
+    .tool h2,
+    .quick-notes h2 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .profile-title {
+      margin: 6px 0 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .info-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .info-item {
+      display: grid;
+      grid-template-columns: 30px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      min-height: 42px;
+    }
+
+    .icon-dot {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .info-label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 3px;
+    }
+
+    .info-value {
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+
+    .profile-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .text-button {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--blue);
+      height: 38px;
+      border-radius: 999px;
+      padding: 0 14px;
+      cursor: pointer;
+      transition: background .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+
+    .text-button:hover {
+      background: var(--blue-quiet);
+      border-color: #c7d7fb;
+    }
+
+    .profile-body.is-editing [data-profile-key] {
+      border-radius: 6px;
+      outline: 1px solid #c7d7fb;
+      background: var(--blue-quiet);
+      padding: 2px 6px;
+      margin-left: -6px;
+      min-height: 1.4em;
+    }
+
+    .profile-body.is-editing [data-profile-key]:focus {
+      outline: 2px solid var(--blue);
+      background: #fff;
+    }
+
+    .section-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .section-title-row select {
+      width: auto;
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0 34px 0 14px;
+      background: #fff;
+    }
+
+    .main-stack {
+      display: grid;
+      gap: 24px;
+    }
+
+    .tool {
+      padding: 24px;
+    }
+
+    .tool-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+
+    .category-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tab {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      border-radius: 999px;
+      min-height: 36px;
+      padding: 0 14px;
+      cursor: pointer;
+      transition: background .18s ease, color .18s ease, border-color .18s ease;
+    }
+
+    .tab[aria-selected="true"] {
+      background: var(--blue-quiet);
+      color: var(--blue);
+      border-color: #c7d7fb;
+      font-weight: 600;
+    }
+
+    .converter-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
+      gap: 14px;
+      align-items: end;
+      margin-top: 18px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .input-wrap {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: hidden;
+      transition: border-color .18s ease, box-shadow .18s ease;
+    }
+
+    .input-wrap:focus-within {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(26, 115, 232, .14);
+    }
+
+    input,
+    select {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      outline: 0;
+    }
+
+    input {
+      min-height: 58px;
+      padding: 0 16px;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    select {
+      border-top: 1px solid var(--line);
+      min-height: 44px;
+      padding: 0 12px;
+      cursor: pointer;
+    }
+
+    .swap-button,
+    .icon-button {
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: #fff;
+      color: var(--blue);
+      display: inline-grid;
+      place-items: center;
+      cursor: pointer;
+      transition: background .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+
+    .swap-button:hover,
+    .icon-button:hover {
+      background: var(--blue-quiet);
+      box-shadow: var(--shadow);
+    }
+
+    .swap-button:active,
+    .icon-button:active {
+      transform: scale(.96);
+    }
+
+    .swap-icon {
+      width: 20px;
+      height: 20px;
+      display: grid;
+      place-items: center;
+      line-height: 1;
+    }
+
+    .swap-icon::before {
+      content: "⇄";
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .result-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 38px;
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .formula {
+      overflow-wrap: anywhere;
+    }
+
+    .utility-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .quick-conversions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .conversion-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      min-height: 92px;
+      background: #fff;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+
+    .conversion-card:hover {
+      border-color: #c7d7fb;
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+    }
+
+    .conversion-title {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .conversion-value {
+      font-size: 19px;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    .quick-notes {
+      padding: 22px 24px;
+    }
+
+    .stiffness-panel {
+      padding: 24px;
+    }
+
+    .stiffness-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+      margin-top: 18px;
+    }
+
+    .stiffness-form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .input-section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fff;
+    }
+
+    .input-section h3 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    .calc-field {
+      display: grid;
+      grid-template-columns: minmax(118px, 1fr) minmax(92px, 128px) 54px;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .calc-field:first-of-type {
+      margin-top: 0;
+    }
+
+    .calc-field input,
+    .calc-field select {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 9px;
+      background: #fff;
+      font-size: 14px;
+    }
+
+    .calc-field input:focus,
+    .calc-field select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(26, 115, 232, .14);
+    }
+
+    .calc-unit {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .stiffness-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .primary-button {
+      border: 1px solid var(--blue);
+      background: var(--blue);
+      color: #fff;
+      height: 38px;
+      border-radius: 999px;
+      padding: 0 16px;
+      cursor: pointer;
+      transition: background .18s ease, box-shadow .18s ease;
+    }
+
+    .primary-button:hover {
+      background: #1765cc;
+      box-shadow: var(--shadow);
+    }
+
+    .stiffness-results {
+      display: grid;
+      gap: 14px;
+    }
+
+    .result-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .result-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      min-height: 92px;
+      background: #fff;
+    }
+
+    .result-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .result-card strong {
+      display: block;
+      font-size: clamp(18px, 2.2vw, 20px);
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .status-chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .status-chip.ok {
+      border-color: rgba(24, 128, 56, .28);
+      color: var(--green);
+      background: rgba(24, 128, 56, .08);
+    }
+
+    .status-chip.warn {
+      border-color: rgba(217, 48, 37, .28);
+      color: var(--red);
+      background: rgba(217, 48, 37, .08);
+    }
+
+    .matrix-wrap {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: auto;
+    }
+
+    .matrix-wrap pre {
+      margin: 0;
+      padding: 14px;
+      font: 12px/1.55 Consolas, "Courier New", monospace;
+      min-width: 660px;
+      color: var(--ink);
+    }
+
+    .hertz-diagram {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: auto;
+    }
+
+    .hertz-diagram svg {
+      display: block;
+      width: 100%;
+      min-width: 720px;
+      height: auto;
+    }
+
+    .hertz-diagram text {
+      font-family: Inter, Roboto, "Google Sans", "Microsoft YaHei", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    .stiffness-diagram {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: auto;
+    }
+
+    .stiffness-diagram svg {
+      display: block;
+      width: 100%;
+      min-width: 760px;
+      height: auto;
+    }
+
+    .stiffness-diagram text {
+      font-family: Inter, Roboto, "Google Sans", "Microsoft YaHei", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    .upload-box {
+      border: 1px dashed #b8c8e8;
+      border-radius: 8px;
+      padding: 18px;
+      background: #f8fafd;
+      display: grid;
+      gap: 12px;
+    }
+
+    .upload-box input {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 12px;
+      background: #fff;
+      font-size: 14px;
+    }
+
+    .data-meta {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    .data-chart {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: auto;
+      min-height: 360px;
+    }
+
+    .data-chart svg {
+      display: block;
+      width: 100%;
+      min-width: 760px;
+      height: auto;
+    }
+
+    .detail-text {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      color: var(--muted);
+      background: #fff;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .model-note {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .field-hidden {
+      display: none !important;
+    }
+
+    .note-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .note {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      min-height: 104px;
+      background: #fff;
+    }
+
+    .note-kicker {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .note strong {
+      display: block;
+      margin-bottom: 6px;
+      line-height: 1.35;
+    }
+
+    .note p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .resume-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 18px;
+      background: #fff;
+    }
+
+    .resume-content {
+      margin-top: 14px;
+      min-height: 220px;
+      color: var(--ink);
+      line-height: 1.7;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .resume-content:focus {
+      outline: 2px solid var(--blue);
+      border-radius: 6px;
+      background: #fff;
+    }
+
+    .resume-box.is-editing .resume-content {
+      outline: 1px solid #c7d7fb;
+      border-radius: 6px;
+      background: var(--blue-quiet);
+      padding: 10px 12px;
+    }
+
+    .quick-notes.is-editing [data-note-key] {
+      border-radius: 6px;
+      outline: 1px solid #c7d7fb;
+      background: var(--blue-quiet);
+      padding: 2px 6px;
+      margin-left: -6px;
+      min-height: 1.4em;
+    }
+
+    .quick-notes.is-editing [data-note-key]:focus {
+      outline: 2px solid var(--blue);
+      background: #fff;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(80px);
+      opacity: 0;
+      background: #3c4043;
+      color: #fff;
+      border-radius: 999px;
+      padding: 10px 16px;
+      box-shadow: var(--shadow-strong);
+      pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+      z-index: 10;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 900px) {
+      .layout,
+      .quick-conversions,
+      .note-grid,
+      .stiffness-grid,
+      .result-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .tool-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app-shell {
+        padding: 16px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .brand h1 {
+        white-space: normal;
+      }
+
+      .converter-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .swap-button {
+        justify-self: center;
+        transform: rotate(90deg);
+      }
+
+      .swap-button:active {
+        transform: rotate(90deg) scale(.96);
+      }
+
+      #fromValue,
+      #toValue {
+        font-size: 21px;
+      }
+
+      .app-nav {
+        width: 100%;
+        flex-wrap: nowrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand" aria-label="站点标题">
+        <div class="brand-mark" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <h1>Ziinc Tool Box</h1>
+      </div>
+      <div class="date-chip" id="todayText">今天</div>
+    </header>
+
+    <nav class="app-nav" aria-label="页面导航">
+      <button class="nav-item" type="button" data-page-target="home" aria-current="page">首页资料</button>
+      <button class="nav-item" type="button" data-page-target="units">单位转换</button>
+      <button class="nav-item" type="button" data-page-target="hertz">赫兹接触</button>
+      <button class="nav-item" type="button" data-page-target="stiffness">球-V槽刚度</button>
+      <button class="nav-item" type="button" data-page-target="data">稳定性计算</button>
+      <button class="nav-item" type="button" data-page-target="notes">常用信息</button>
+    </nav>
+
+    <section class="layout">
+      <aside class="panel profile" aria-label="个人信息" data-page-section="home">
+        <div class="profile-cover">
+          <button class="avatar" type="button" id="avatarButton" aria-label="编辑头像" title="编辑头像">
+            <span class="avatar-text" id="avatarText">我</span>
+          </button>
+          <input class="avatar-input" id="avatarInput" type="file" accept="image/*" aria-hidden="true">
+        </div>
+        <div class="profile-body" id="profileBody">
+          <h2 data-profile-key="name">你的名字</h2>
+          <p class="profile-title" data-profile-key="title">个人主页 / 常用信息 / 工具集合</p>
+
+          <div class="info-list">
+            <div class="info-item">
+              <div class="icon-dot" style="background:#1a73e8;">@</div>
+              <div>
+                <div class="info-label">邮箱</div>
+                <div class="info-value" data-profile-key="email">yourname@example.com</div>
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="icon-dot" style="background:#188038;">☎</div>
+              <div>
+                <div class="info-label">电话</div>
+                <div class="info-value" data-profile-key="phone">+86 000 0000 0000</div>
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="icon-dot" style="background:#fbbc04;color:#202124;">⌂</div>
+              <div>
+                <div class="info-label">位置</div>
+                <div class="info-value" data-profile-key="location">城市 / 地区</div>
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="icon-dot" style="background:#d93025;">★</div>
+              <div>
+                <div class="info-label">链接</div>
+                <div class="info-value" data-profile-key="links">个人网站 / GitHub / 作品集</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-actions">
+            <button class="text-button" type="button" id="editProfile">编辑资料</button>
+            <button class="text-button" type="button" id="copyEmail" data-copy="yourname@example.com">复制邮箱</button>
+            <button class="text-button" type="button" id="copyPhone" data-copy="+86 000 0000 0000">复制电话</button>
+            <button class="text-button" type="button" id="exportConfig">导出配置</button>
+            <button class="text-button" type="button" id="importConfig">导入配置</button>
+            <input class="file-input-hidden" id="configImportInput" type="file" accept=".json,application/json" aria-hidden="true">
+          </div>
+        </div>
+      </aside>
+
+      <div class="main-stack">
+        <section class="panel tool" aria-label="单位转换工具" data-page-section="units">
+          <div class="tool-header">
+            <h2>单位转换</h2>
+            <div class="category-tabs" role="tablist" aria-label="转换类别" id="categoryTabs"></div>
+          </div>
+
+          <div class="converter-grid">
+            <div class="field">
+              <label for="fromValue">数值</label>
+              <div class="input-wrap">
+                <input id="fromValue" inputmode="decimal" value="1" autocomplete="off">
+                <select id="fromUnit" aria-label="原始单位"></select>
+              </div>
+            </div>
+
+            <button class="swap-button" type="button" id="swapButton" title="交换单位" aria-label="交换单位">
+              <span class="swap-icon" aria-hidden="true"></span>
+            </button>
+
+            <div class="field">
+              <label for="toValue">结果</label>
+              <div class="input-wrap">
+                <input id="toValue" inputmode="decimal" autocomplete="off">
+                <select id="toUnit" aria-label="目标单位"></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="result-meta">
+            <span class="formula" id="formulaText"></span>
+            <div class="utility-actions">
+              <button class="icon-button" type="button" id="copyResult" title="复制结果" aria-label="复制结果">⧉</button>
+              <button class="icon-button" type="button" id="clearValue" title="清空" aria-label="清空">×</button>
+            </div>
+          </div>
+
+          <div class="quick-conversions" id="quickConversions" aria-label="常用换算"></div>
+        </section>
+
+        <section class="panel stiffness-panel" aria-label="赫兹接触计算" data-page-section="hertz">
+          <div class="section-title-row">
+            <h2>赫兹接触计算</h2>
+            <button class="text-button" type="button" id="copyHertz">复制结果</button>
+          </div>
+
+          <div class="stiffness-grid">
+            <div class="stiffness-form">
+              <div class="input-section">
+                <h3>接触模型</h3>
+                <label class="calc-field">
+                  <span>模型</span>
+                  <select id="hertzModel" aria-label="赫兹接触模型">
+                    <option value="sphereSphere">球-球接触</option>
+                    <option value="spherePlane">球-平面接触</option>
+                    <option value="crossedCylindersEqual">等半径圆柱交叉接触</option>
+                    <option value="parallelCylinders">平行圆柱线接触</option>
+                  </select>
+                  <span class="calc-unit">-</span>
+                </label>
+                <p class="model-note" id="hertzModelNote">两个球体受压形成圆形点接触。</p>
+              </div>
+
+              <div class="input-section">
+                <h3>载荷与曲率</h3>
+                <label class="calc-field">法向载荷 <input data-hertz="load" value="100" inputmode="decimal"><span class="calc-unit">N</span></label>
+                <label class="calc-field" id="hertzRadius1Field"><span id="hertzRadius1Label">球1半径</span><input data-hertz="radius1" value="8" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                <label class="calc-field" id="hertzRadius2Field"><span id="hertzRadius2Label">球2半径</span><input data-hertz="radius2" value="8" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                <label class="calc-field field-hidden" id="hertzLengthField">接触长度 <input data-hertz="length" value="20" inputmode="decimal"><span class="calc-unit">mm</span></label>
+              </div>
+
+              <div class="input-section">
+                <h3>接触体1材料</h3>
+                <label class="calc-field">弹性模量 <input data-hertz="e1" value="206" inputmode="decimal"><span class="calc-unit">GPa</span></label>
+                <label class="calc-field">泊松比 <input data-hertz="nu1" value="0.30" inputmode="decimal"><span class="calc-unit">-</span></label>
+              </div>
+
+              <div class="input-section">
+                <h3>接触体2材料</h3>
+                <label class="calc-field">弹性模量 <input data-hertz="e2" value="206" inputmode="decimal"><span class="calc-unit">GPa</span></label>
+                <label class="calc-field">泊松比 <input data-hertz="nu2" value="0.30" inputmode="decimal"><span class="calc-unit">-</span></label>
+              </div>
+
+              <div class="stiffness-actions">
+                <button class="primary-button" type="button" id="calculateHertz">计算</button>
+                <button class="text-button" type="button" id="resetHertz">重置</button>
+              </div>
+            </div>
+
+            <div class="stiffness-results">
+              <div class="result-cards" id="hertzCards"></div>
+              <div class="detail-text" id="hertzSummary">适用于球-球或球-平面圆形点接触；接触体2半径填 0 表示平面。</div>
+              <div class="hertz-diagram" id="hertzDetail" aria-label="赫兹接触模型示意图"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel stiffness-panel" aria-label="球-V槽刚度计算" data-page-section="stiffness">
+          <div class="section-title-row">
+            <h2>球-V槽刚度计算</h2>
+            <select id="stiffnessOutputUnit" aria-label="刚度单位">
+              <option value="N/mm">N/mm</option>
+              <option value="N/m">N/m</option>
+            </select>
+          </div>
+
+          <div class="stiffness-grid">
+            <div class="stiffness-form">
+              <div class="input-section">
+                <h3>几何与载荷</h3>
+                <label class="calc-field">球体直径 <input data-stiffness="ballDiameter" value="16" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                <label class="calc-field">V槽夹角 <input data-stiffness="grooveAngle" value="90" inputmode="decimal"><span class="calc-unit">deg</span></label>
+                <label class="calc-field">均布直径 <input data-stiffness="pitchDiameter" value="100" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                <label class="calc-field">摩擦系数 <input data-stiffness="mu" value="0.10" inputmode="decimal"><span class="calc-unit">-</span></label>
+                <label class="calc-field">总预紧力 <input data-stiffness="preload" value="300" inputmode="decimal"><span class="calc-unit">N</span></label>
+              </div>
+
+              <div class="input-section">
+                <h3>小球参数</h3>
+                <label class="calc-field">弹性模量 <input data-stiffness="ballE" value="206" inputmode="decimal"><span class="calc-unit">GPa</span></label>
+                <label class="calc-field">泊松比 <input data-stiffness="ballNu" value="0.30" inputmode="decimal"><span class="calc-unit">-</span></label>
+                <label class="calc-field">屈服强度 <input data-stiffness="ballYield" value="1500" inputmode="decimal"><span class="calc-unit">MPa</span></label>
+                <label class="calc-field">硬度 <input data-stiffness="ballHardness" value="700" inputmode="decimal"><span class="calc-unit">HV</span></label>
+                <label class="calc-field">剪切模量 <input data-stiffness="ballG" value="79" inputmode="decimal"><span class="calc-unit">GPa</span></label>
+              </div>
+
+              <div class="input-section">
+                <h3>槽体参数</h3>
+                <label class="calc-field">弹性模量 <input data-stiffness="grooveE" value="206" inputmode="decimal"><span class="calc-unit">GPa</span></label>
+                <label class="calc-field">泊松比 <input data-stiffness="grooveNu" value="0.30" inputmode="decimal"><span class="calc-unit">-</span></label>
+                <label class="calc-field">屈服强度 <input data-stiffness="grooveYield" value="1500" inputmode="decimal"><span class="calc-unit">MPa</span></label>
+                <label class="calc-field">硬度 <input data-stiffness="grooveHardness" value="700" inputmode="decimal"><span class="calc-unit">HV</span></label>
+                <label class="calc-field">剪切模量 <input data-stiffness="grooveG" value="79" inputmode="decimal"><span class="calc-unit">GPa</span></label>
+              </div>
+
+              <div class="stiffness-actions">
+                <button class="primary-button" type="button" id="calculateStiffness">计算</button>
+                <button class="text-button" type="button" id="resetStiffness">重置</button>
+                <button class="text-button" type="button" id="copyStiffness">复制结果</button>
+              </div>
+            </div>
+
+            <div class="stiffness-results">
+              <div class="result-cards" id="stiffnessCards"></div>
+              <div class="status-row" id="stiffnessStatus"></div>
+              <div class="detail-text" id="stiffnessSummary">输入参数后点击计算。</div>
+              <div class="stiffness-diagram" id="stiffnessMatrix" aria-label="球-V槽刚度模型示意图"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel stiffness-panel" aria-label="稳定性计算" data-page-section="data">
+          <div class="section-title-row">
+            <h2>稳定性计算</h2>
+            <button class="text-button" type="button" id="copyDataStats">复制统计</button>
+          </div>
+
+          <div class="stiffness-grid">
+            <div class="stiffness-form">
+              <div class="upload-box">
+                <label for="dataFileInput">上传 Excel / CSV 文件</label>
+                <input id="dataFileInput" type="file" accept=".xlsx,.xls,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv">
+                <div class="data-meta" id="dataFileMeta">支持 .xlsx、.csv、.tsv；部分 HTML/文本型 .xls 可直接读取。</div>
+              </div>
+
+              <div class="input-section">
+                <h3>处理说明</h3>
+                <div class="data-meta">自动跳过空值和非数字测量值；3sigma 使用总体标准差 σ，计算为 3σ。</div>
+              </div>
+            </div>
+
+            <div class="stiffness-results">
+              <div class="result-cards" id="dataStatsCards"></div>
+              <div class="detail-text" id="dataSummary">上传文件后将显示最大值、最小值、PV值、平均值和 3sigma。</div>
+              <div class="data-chart" id="dataChart" aria-label="测量数据折线图"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel quick-notes" id="quickNotes" aria-label="常用信息" data-page-section="notes">
+          <div class="section-title-row">
+            <h2>常用信息</h2>
+            <button class="text-button" type="button" id="editNotes">编辑信息</button>
+          </div>
+          <div class="note-grid">
+            <article class="note">
+              <div class="note-kicker" data-note-key="0.kicker">证件</div>
+              <strong data-note-key="0.title">身份证 / 护照</strong>
+              <p data-note-key="0.body">可替换为常用编号、有效期或提醒。</p>
+            </article>
+            <article class="note">
+              <div class="note-kicker" data-note-key="1.kicker">地址</div>
+              <strong data-note-key="1.title">收件地址</strong>
+              <p data-note-key="1.body">姓名、电话、详细地址、邮编。</p>
+            </article>
+            <article class="note">
+              <div class="note-kicker" data-note-key="2.kicker">账户</div>
+              <strong data-note-key="2.title">常用账号</strong>
+              <p data-note-key="2.body">邮箱、云盘、代码仓库、工作入口。</p>
+            </article>
+          </div>
+
+          <section class="resume-box" id="resumeBox" aria-label="我的个人简历">
+            <div class="section-title-row">
+              <h2>我的个人简历</h2>
+              <button class="text-button" type="button" id="editResume">编辑简历</button>
+            </div>
+            <div class="resume-content" id="resumeContent">
+姓名：你的名字
+职业方向：个人简介 / 专业方向 / 目标岗位
+
+工作经历：
+- 公司 / 项目 / 职责 / 成果
+
+教育背景：
+- 学校 / 专业 / 时间
+
+技能：
+- 常用工具、编程语言、设计能力或工程经验
+
+作品与链接：
+- 个人网站 / GitHub / 作品集
+            </div>
+          </section>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const categories = {
+      length: {
+        label: "长度",
+        base: "m",
+        units: {
+          nm: { label: "纳米 nm", factor: 0.000000001 },
+          um: { label: "微米 μm", factor: 0.000001 },
+          mm: { label: "毫米 mm", factor: 0.001 },
+          cm: { label: "厘米 cm", factor: 0.01 },
+          m: { label: "米 m", factor: 1 },
+          km: { label: "千米 km", factor: 1000 },
+          inch: { label: "英寸 in", factor: 0.0254 },
+          ft: { label: "英尺 ft", factor: 0.3048 },
+          yd: { label: "码 yd", factor: 0.9144 },
+          mile: { label: "英里 mi", factor: 1609.344 }
+        },
+        quick: [["um", "mm", 1000], ["cm", "inch", 100], ["m", "ft", 1]]
+      },
+      area: {
+        label: "面积",
+        base: "m2",
+        units: {
+          mm2: { label: "平方毫米 mm²", factor: 0.000001 },
+          cm2: { label: "平方厘米 cm²", factor: 0.0001 },
+          m2: { label: "平方米 m²", factor: 1 },
+          km2: { label: "平方千米 km²", factor: 1000000 },
+          hectare: { label: "公顷 ha", factor: 10000 },
+          acre: { label: "英亩 acre", factor: 4046.8564224 },
+          ft2: { label: "平方英尺 ft²", factor: 0.09290304 }
+        },
+        quick: [["m2", "ft2", 1], ["hectare", "acre", 1], ["km2", "acre", 1]]
+      },
+      mass: {
+        label: "重量",
+        base: "kg",
+        units: {
+          mg: { label: "毫克 mg", factor: 0.000001 },
+          g: { label: "克 g", factor: 0.001 },
+          kg: { label: "千克 kg", factor: 1 },
+          tonne: { label: "吨 t", factor: 1000 },
+          oz: { label: "盎司 oz", factor: 0.028349523125 },
+          lb: { label: "磅 lb", factor: 0.45359237 }
+        },
+        quick: [["kg", "lb", 1], ["g", "oz", 100], ["tonne", "kg", 1]]
+      },
+      volume: {
+        label: "体积",
+        base: "l",
+        units: {
+          ml: { label: "毫升 ml", factor: 0.001 },
+          l: { label: "升 L", factor: 1 },
+          m3: { label: "立方米 m³", factor: 1000 },
+          tsp: { label: "茶匙 tsp", factor: 0.00492892159375 },
+          tbsp: { label: "汤匙 tbsp", factor: 0.01478676478125 },
+          cup: { label: "美制杯 cup", factor: 0.2365882365 },
+          floz: { label: "液量盎司 fl oz", factor: 0.0295735295625 },
+          gal: { label: "美制加仑 gal", factor: 3.785411784 }
+        },
+        quick: [["l", "gal", 1], ["cup", "ml", 1], ["m3", "l", 1]]
+      },
+      temperature: {
+        label: "温度",
+        units: {
+          c: { label: "摄氏度 °C" },
+          f: { label: "华氏度 °F" },
+          k: { label: "开尔文 K" }
+        },
+        quick: [["c", "f", 0], ["c", "k", 25], ["f", "c", 98.6]]
+      },
+      time: {
+        label: "时间",
+        base: "s",
+        units: {
+          ms: { label: "毫秒 ms", factor: 0.001 },
+          s: { label: "秒 s", factor: 1 },
+          min: { label: "分钟 min", factor: 60 },
+          h: { label: "小时 h", factor: 3600 },
+          day: { label: "天 d", factor: 86400 },
+          week: { label: "周 wk", factor: 604800 },
+          year: { label: "年 yr", factor: 31557600 }
+        },
+        quick: [["h", "min", 1], ["day", "h", 1], ["week", "day", 1]]
+      },
+      angle: {
+        label: "角度",
+        base: "rad",
+        units: {
+          deg: { label: "度 °", factor: Math.PI / 180 },
+          rad: { label: "弧度 rad", factor: 1 },
+          mrad: { label: "毫弧度 mrad", factor: 0.001 },
+          urad: { label: "微弧度 μrad", factor: 0.000001 },
+          grad: { label: "百分度 gon", factor: Math.PI / 200 },
+          arcmin: { label: "角分 ′", factor: Math.PI / 10800 },
+          arcsec: { label: "角秒 ″", factor: Math.PI / 648000 },
+          turn: { label: "圈 turn", factor: Math.PI * 2 }
+        },
+        quick: [["mrad", "deg", 1], ["urad", "arcsec", 1000], ["deg", "rad", 180]]
+      },
+      speed: {
+        label: "速度",
+        base: "mps",
+        units: {
+          mps: { label: "米/秒 m/s", factor: 1 },
+          kmh: { label: "千米/小时 km/h", factor: 0.27777777777778 },
+          mph: { label: "英里/小时 mph", factor: 0.44704 },
+          knot: { label: "节 kn", factor: 0.51444444444444 },
+          fps: { label: "英尺/秒 ft/s", factor: 0.3048 }
+        },
+        quick: [["kmh", "mph", 100], ["mps", "kmh", 1], ["knot", "kmh", 1]]
+      },
+      stiffness: {
+        label: "刚度",
+        base: "n_m",
+        units: {
+          n_m: { label: "线刚度 N/m", factor: 1, kind: "linear" },
+          n_mm: { label: "线刚度 N/mm", factor: 1000, kind: "linear" },
+          kn_m: { label: "线刚度 kN/m", factor: 1000, kind: "linear" },
+          mn_m: { label: "线刚度 MN/m", factor: 1000000, kind: "linear" },
+          n_m_rad: { label: "转动刚度 N·m/rad", factor: 1, kind: "rotary" },
+          n_mm_rad: { label: "转动刚度 N·mm/rad", factor: 0.001, kind: "rotary" },
+          kn_m_rad: { label: "转动刚度 kN·m/rad", factor: 1000, kind: "rotary" }
+        },
+        quick: [["n_mm", "n_m", 1], ["n_m_rad", "n_mm_rad", 1], ["kn_m", "n_mm", 1]]
+      },
+      data: {
+        label: "数据",
+        base: "byte",
+        units: {
+          bit: { label: "比特 bit", factor: 0.125 },
+          byte: { label: "字节 B", factor: 1 },
+          kb: { label: "KB", factor: 1024 },
+          mb: { label: "MB", factor: 1048576 },
+          gb: { label: "GB", factor: 1073741824 },
+          tb: { label: "TB", factor: 1099511627776 }
+        },
+        quick: [["gb", "mb", 1], ["mb", "kb", 1], ["byte", "bit", 1]]
+      },
+      pressure: {
+        label: "压力",
+        base: "pa",
+        units: {
+          pa: { label: "帕 Pa", factor: 1 },
+          kpa: { label: "千帕 kPa", factor: 1000 },
+          bar: { label: "巴 bar", factor: 100000 },
+          atm: { label: "标准大气压 atm", factor: 101325 },
+          psi: { label: "磅/平方英寸 psi", factor: 6894.757293168 }
+        },
+        quick: [["atm", "kpa", 1], ["bar", "psi", 1], ["kpa", "psi", 100]]
+      }
+    };
+
+    const state = {
+      category: "length",
+      editing: "from"
+    };
+
+    const tabs = document.querySelector("#categoryTabs");
+    const fromValue = document.querySelector("#fromValue");
+    const toValue = document.querySelector("#toValue");
+    const fromUnit = document.querySelector("#fromUnit");
+    const toUnit = document.querySelector("#toUnit");
+    const formulaText = document.querySelector("#formulaText");
+    const quickConversions = document.querySelector("#quickConversions");
+    const toast = document.querySelector("#toast");
+    const avatarButton = document.querySelector("#avatarButton");
+    const avatarInput = document.querySelector("#avatarInput");
+    const avatarStorageKey = "ziincToolBoxAvatar";
+    const profileBody = document.querySelector("#profileBody");
+    const editProfile = document.querySelector("#editProfile");
+    const copyEmail = document.querySelector("#copyEmail");
+    const copyPhone = document.querySelector("#copyPhone");
+    const exportConfig = document.querySelector("#exportConfig");
+    const importConfig = document.querySelector("#importConfig");
+    const configImportInput = document.querySelector("#configImportInput");
+    const profileStorageKey = "ziincToolBoxProfile";
+    const profileFields = Array.from(document.querySelectorAll("[data-profile-key]"));
+    let profileEditMode = false;
+    const quickNotes = document.querySelector("#quickNotes");
+    const editNotes = document.querySelector("#editNotes");
+    const noteStorageKey = "ziincToolBoxNotes";
+    const noteFields = Array.from(document.querySelectorAll("[data-note-key]"));
+    let notesEditMode = false;
+    const resumeBox = document.querySelector("#resumeBox");
+    const resumeContent = document.querySelector("#resumeContent");
+    const editResume = document.querySelector("#editResume");
+    const resumeStorageKey = "ziincToolBoxResume";
+    let resumeEditMode = false;
+    const stiffnessInputs = Array.from(document.querySelectorAll("[data-stiffness]"));
+    const stiffnessInputMap = Object.fromEntries(stiffnessInputs.map((input) => [input.dataset.stiffness, input]));
+    const stiffnessDefaults = Object.fromEntries(stiffnessInputs.map((input) => [input.dataset.stiffness, input.value]));
+    const stiffnessCards = document.querySelector("#stiffnessCards");
+    const stiffnessStatus = document.querySelector("#stiffnessStatus");
+    const stiffnessSummary = document.querySelector("#stiffnessSummary");
+    const stiffnessMatrix = document.querySelector("#stiffnessMatrix");
+    const stiffnessOutputUnit = document.querySelector("#stiffnessOutputUnit");
+    const dofLabels = ["X", "Y", "Z", "Rx", "Ry", "Rz"];
+    const hertzInputs = Array.from(document.querySelectorAll("[data-hertz]"));
+    const hertzInputMap = Object.fromEntries(hertzInputs.map((input) => [input.dataset.hertz, input]));
+    const hertzDefaults = Object.fromEntries(hertzInputs.map((input) => [input.dataset.hertz, input.value]));
+    const hertzCards = document.querySelector("#hertzCards");
+    const hertzSummary = document.querySelector("#hertzSummary");
+    const hertzDetail = document.querySelector("#hertzDetail");
+    const hertzModel = document.querySelector("#hertzModel");
+    const hertzModelDefault = hertzModel.value;
+    const hertzModelNote = document.querySelector("#hertzModelNote");
+    const hertzRadius1Label = document.querySelector("#hertzRadius1Label");
+    const hertzRadius2Label = document.querySelector("#hertzRadius2Label");
+    const hertzRadius2Field = document.querySelector("#hertzRadius2Field");
+    const hertzLengthField = document.querySelector("#hertzLengthField");
+    const dataFileInput = document.querySelector("#dataFileInput");
+    const dataFileMeta = document.querySelector("#dataFileMeta");
+    const dataStatsCards = document.querySelector("#dataStatsCards");
+    const dataSummary = document.querySelector("#dataSummary");
+    const dataChart = document.querySelector("#dataChart");
+    const pageLayout = document.querySelector(".layout");
+    const mainStack = document.querySelector(".main-stack");
+    const pageButtons = Array.from(document.querySelectorAll("[data-page-target]"));
+    const pageSections = Array.from(document.querySelectorAll("[data-page-section]"));
+    const pageKeys = new Set(pageButtons.map((button) => button.dataset.pageTarget));
+
+    function formatNumber(value) {
+      if (!Number.isFinite(value)) return "";
+      const abs = Math.abs(value);
+      if (abs !== 0 && (abs >= 1000000000 || abs < 0.000001)) {
+        return value.toExponential(8).replace(/\.?0+e/, "e");
+      }
+      return new Intl.NumberFormat("zh-CN", {
+        maximumFractionDigits: 10
+      }).format(Number(value.toPrecision(12)));
+    }
+
+    function parseValue(value) {
+      const normalized = String(value).trim().replace(/,/g, "");
+      if (normalized === "" || normalized === "-" || normalized === ".") return null;
+      const number = Number(normalized);
+      return Number.isFinite(number) ? number : null;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function isPlainObject(value) {
+      return value !== null && typeof value === "object" && !Array.isArray(value);
+    }
+
+    function setActivePage(page, updateHash = true) {
+      const activePage = pageKeys.has(page) ? page : "home";
+
+      pageButtons.forEach((button) => {
+        const isActive = button.dataset.pageTarget === activePage;
+        if (isActive) {
+          button.setAttribute("aria-current", "page");
+        } else {
+          button.removeAttribute("aria-current");
+        }
+      });
+
+      pageSections.forEach((section) => {
+        section.classList.toggle("page-hidden", section.dataset.pageSection !== activePage);
+      });
+
+      mainStack.hidden = activePage === "home";
+      pageLayout.classList.toggle("profile-page", activePage === "home");
+      pageLayout.classList.toggle("tool-page", activePage !== "home");
+
+      if (activePage === "stiffness") {
+        runStiffnessCalculation();
+      }
+
+      if (activePage === "hertz") {
+        runHertzCalculation();
+      }
+
+      if (activePage === "data" && !dataChart.innerHTML) {
+        renderEmptyDataChart();
+      }
+
+      if (updateHash) {
+        history.replaceState(null, "", `#${activePage}`);
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function temperatureToCelsius(value, unit) {
+      if (unit === "f") return (value - 32) * 5 / 9;
+      if (unit === "k") return value - 273.15;
+      return value;
+    }
+
+    function celsiusToTemperature(value, unit) {
+      if (unit === "f") return value * 9 / 5 + 32;
+      if (unit === "k") return value + 273.15;
+      return value;
+    }
+
+    function convert(value, from, to) {
+      const category = categories[state.category];
+      if (state.category === "temperature") {
+        return celsiusToTemperature(temperatureToCelsius(value, from), to);
+      }
+      if (state.category === "stiffness" && category.units[from].kind !== category.units[to].kind) {
+        return NaN;
+      }
+      return value * category.units[from].factor / category.units[to].factor;
+    }
+
+    function getUnitLabel(key) {
+      return categories[state.category].units[key].label;
+    }
+
+    function renderTabs() {
+      tabs.innerHTML = "";
+      Object.entries(categories).forEach(([key, category]) => {
+        const button = document.createElement("button");
+        button.className = "tab";
+        button.type = "button";
+        button.role = "tab";
+        button.textContent = category.label;
+        button.setAttribute("aria-selected", String(key === state.category));
+        button.addEventListener("click", () => setCategory(key));
+        tabs.append(button);
+      });
+    }
+
+    function renderUnits() {
+      const units = categories[state.category].units;
+      fromUnit.innerHTML = "";
+      toUnit.innerHTML = "";
+
+      Object.entries(units).forEach(([key, unit]) => {
+        const left = new Option(unit.label, key);
+        const right = new Option(unit.label, key);
+        fromUnit.append(left);
+        toUnit.append(right);
+      });
+
+      const unitKeys = Object.keys(units);
+      fromUnit.value = unitKeys[0];
+      toUnit.value = unitKeys[1] || unitKeys[0];
+
+      if (state.category === "length") {
+        fromUnit.value = "cm";
+        toUnit.value = "inch";
+      }
+      if (state.category === "temperature") {
+        fromUnit.value = "c";
+        toUnit.value = "f";
+      }
+    }
+
+    function renderQuickConversions() {
+      const category = categories[state.category];
+      quickConversions.innerHTML = "";
+
+      category.quick.forEach(([from, to, value]) => {
+        const result = convert(value, from, to);
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "conversion-card";
+        card.innerHTML = `
+          <div class="conversion-title">${formatNumber(value)} ${category.units[from].label}</div>
+          <div class="conversion-value">${formatNumber(result)} ${category.units[to].label}</div>
+        `;
+        card.addEventListener("click", () => {
+          fromUnit.value = from;
+          toUnit.value = to;
+          fromValue.value = value;
+          state.editing = "from";
+          updateConversion();
+        });
+        quickConversions.append(card);
+      });
+    }
+
+    function updateFormula(sourceValue, result) {
+      const fromLabel = getUnitLabel(fromUnit.value);
+      const toLabel = getUnitLabel(toUnit.value);
+      if (sourceValue === null || !Number.isFinite(result)) {
+        formulaText.textContent = "";
+        return;
+      }
+      formulaText.textContent = `${formatNumber(sourceValue)} ${fromLabel} = ${formatNumber(result)} ${toLabel}`;
+    }
+
+    function updateConversion() {
+      const sourceInput = state.editing === "from" ? fromValue : toValue;
+      const targetInput = state.editing === "from" ? toValue : fromValue;
+      const sourceUnit = state.editing === "from" ? fromUnit.value : toUnit.value;
+      const targetUnit = state.editing === "from" ? toUnit.value : fromUnit.value;
+      const source = parseValue(sourceInput.value);
+
+      if (source === null) {
+        targetInput.value = "";
+        updateFormula(null, NaN);
+        return;
+      }
+
+      const result = convert(source, sourceUnit, targetUnit);
+      if (!Number.isFinite(result)) {
+        targetInput.value = "";
+        formulaText.textContent = "线刚度和转动刚度量纲不同，请选择同类型单位。";
+        return;
+      }
+      targetInput.value = formatNumber(result);
+      if (state.editing === "from") {
+        updateFormula(source, result);
+      } else {
+        const forward = convert(result, fromUnit.value, toUnit.value);
+        updateFormula(result, forward);
+      }
+    }
+
+    function setCategory(key) {
+      state.category = key;
+      state.editing = "from";
+      fromValue.value = "1";
+      renderTabs();
+      renderUnits();
+      renderQuickConversions();
+      updateConversion();
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 1600);
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("已复制");
+      } catch (error) {
+        showToast("复制失败");
+      }
+    }
+
+    function getProfileData() {
+      return profileFields.reduce((data, field) => {
+        data[field.dataset.profileKey] = field.textContent.trim();
+        return data;
+      }, {});
+    }
+
+    function applyProfileData(data, allowEmpty = false) {
+      if (!isPlainObject(data)) return;
+      profileFields.forEach((field) => {
+        const value = data[field.dataset.profileKey];
+        if (typeof value === "string" && (allowEmpty || value.trim())) {
+          field.textContent = value;
+        }
+      });
+      updateProfileCopyButtons();
+    }
+
+    function updateProfileCopyButtons() {
+      const profile = getProfileData();
+      copyEmail.dataset.copy = profile.email || "";
+      copyPhone.dataset.copy = profile.phone || "";
+      const fallbackInitial = profile.name ? profile.name.trim().charAt(0) : "我";
+      document.querySelector("#avatarText").textContent = fallbackInitial || "我";
+    }
+
+    function saveProfileData() {
+      try {
+        localStorage.setItem(profileStorageKey, JSON.stringify(getProfileData()));
+      } catch (error) {
+        showToast("资料未能保存");
+      }
+      updateProfileCopyButtons();
+    }
+
+    function loadProfileData() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(profileStorageKey) || "{}");
+        applyProfileData(saved);
+      } catch (error) {
+        localStorage.removeItem(profileStorageKey);
+      }
+      updateProfileCopyButtons();
+    }
+
+    function setProfileEditMode(enabled) {
+      profileEditMode = enabled;
+      profileBody.classList.toggle("is-editing", enabled);
+      editProfile.textContent = enabled ? "保存资料" : "编辑资料";
+      profileFields.forEach((field) => {
+        field.contentEditable = String(enabled);
+        field.toggleAttribute("tabindex", enabled);
+      });
+
+      if (enabled) {
+        profileFields[0].focus();
+        document.getSelection().selectAllChildren(profileFields[0]);
+      } else {
+        saveProfileData();
+        showToast("资料已保存");
+      }
+    }
+
+    function getNotesData() {
+      return noteFields.reduce((data, field) => {
+        data[field.dataset.noteKey] = field.textContent.trim();
+        return data;
+      }, {});
+    }
+
+    function applyNotesData(data, allowEmpty = false) {
+      if (!isPlainObject(data)) return;
+      noteFields.forEach((field) => {
+        const value = data[field.dataset.noteKey];
+        if (typeof value === "string" && (allowEmpty || value.trim())) {
+          field.textContent = value;
+        }
+      });
+    }
+
+    function saveNotesData() {
+      try {
+        localStorage.setItem(noteStorageKey, JSON.stringify(getNotesData()));
+      } catch (error) {
+        showToast("常用信息未能保存");
+      }
+    }
+
+    function loadNotesData() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(noteStorageKey) || "{}");
+        applyNotesData(saved);
+      } catch (error) {
+        localStorage.removeItem(noteStorageKey);
+      }
+    }
+
+    function setNotesEditMode(enabled) {
+      notesEditMode = enabled;
+      quickNotes.classList.toggle("is-editing", enabled);
+      editNotes.textContent = enabled ? "保存信息" : "编辑信息";
+      noteFields.forEach((field) => {
+        field.contentEditable = String(enabled);
+        field.toggleAttribute("tabindex", enabled);
+      });
+
+      if (enabled) {
+        noteFields[0].focus();
+        document.getSelection().selectAllChildren(noteFields[0]);
+      } else {
+        saveNotesData();
+        showToast("常用信息已保存");
+      }
+    }
+
+    function saveResumeData() {
+      try {
+        localStorage.setItem(resumeStorageKey, getResumeData());
+      } catch (error) {
+        showToast("简历未能保存");
+      }
+    }
+
+    function getResumeData() {
+      return resumeContent.textContent.trim();
+    }
+
+    function applyResumeData(value, allowEmpty = false) {
+      if (typeof value === "string" && (allowEmpty || value.trim())) {
+        resumeContent.textContent = value;
+      }
+    }
+
+    function loadResumeData() {
+      try {
+        const saved = localStorage.getItem(resumeStorageKey);
+        applyResumeData(saved);
+      } catch (error) {
+        localStorage.removeItem(resumeStorageKey);
+      }
+    }
+
+    function setResumeEditMode(enabled) {
+      resumeEditMode = enabled;
+      resumeBox.classList.toggle("is-editing", enabled);
+      editResume.textContent = enabled ? "保存简历" : "编辑简历";
+      resumeContent.contentEditable = String(enabled);
+      resumeContent.toggleAttribute("tabindex", enabled);
+
+      if (enabled) {
+        resumeContent.focus();
+      } else {
+        saveResumeData();
+        showToast("简历已保存");
+      }
+    }
+
+    function setAvatarImage(dataUrl) {
+      avatarButton.style.backgroundImage = dataUrl ? `url("${dataUrl}")` : "";
+      avatarButton.classList.toggle("has-image", Boolean(dataUrl));
+    }
+
+    function applyAvatarData(value, allowEmpty = false) {
+      if (typeof value !== "string") return;
+      const dataUrl = value.startsWith("data:image/") ? value : "";
+      if (!dataUrl && !allowEmpty) return;
+      setAvatarImage(dataUrl);
+      if (dataUrl) {
+        localStorage.setItem(avatarStorageKey, dataUrl);
+      } else {
+        localStorage.removeItem(avatarStorageKey);
+      }
+    }
+
+    function loadAvatarImage() {
+      try {
+        setAvatarImage(localStorage.getItem(avatarStorageKey));
+      } catch (error) {
+        setAvatarImage("");
+      }
+    }
+
+    function readFileAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.addEventListener("load", () => resolve(reader.result));
+        reader.addEventListener("error", reject);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function createAvatarDataUrl(file) {
+      const source = await readFileAsDataUrl(file);
+      const image = new Image();
+      image.src = source;
+
+      await new Promise((resolve, reject) => {
+        image.addEventListener("load", resolve, { once: true });
+        image.addEventListener("error", reject, { once: true });
+      });
+
+      const size = Math.min(image.naturalWidth, image.naturalHeight);
+      const sx = (image.naturalWidth - size) / 2;
+      const sy = (image.naturalHeight - size) / 2;
+      const canvas = document.createElement("canvas");
+      canvas.width = 320;
+      canvas.height = 320;
+
+      const context = canvas.getContext("2d");
+      context.drawImage(image, sx, sy, size, size, 0, 0, 320, 320);
+      return canvas.toDataURL("image/jpeg", 0.88);
+    }
+
+    function collectToolBoxConfig() {
+      return {
+        app: "Ziinc Tool Box",
+        schemaVersion: 1,
+        exportedAt: new Date().toISOString(),
+        profile: getProfileData(),
+        notes: getNotesData(),
+        resume: getResumeData(),
+        avatar: localStorage.getItem(avatarStorageKey) || ""
+      };
+    }
+
+    function exportToolBoxConfig() {
+      const config = collectToolBoxConfig();
+      const content = JSON.stringify(config, null, 2);
+      const blob = new Blob([content], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const fileStamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `ziinc-tool-box-config-${fileStamp}.json`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast("配置已导出");
+    }
+
+    function applyToolBoxConfig(config) {
+      if (!isPlainObject(config)) {
+        throw new Error("配置文件格式不正确。");
+      }
+
+      let applied = 0;
+      if (isPlainObject(config.profile)) {
+        localStorage.setItem(profileStorageKey, JSON.stringify(config.profile));
+        applyProfileData(config.profile, true);
+        applied += 1;
+      }
+
+      if (isPlainObject(config.notes)) {
+        localStorage.setItem(noteStorageKey, JSON.stringify(config.notes));
+        applyNotesData(config.notes, true);
+        applied += 1;
+      }
+
+      if (typeof config.resume === "string") {
+        localStorage.setItem(resumeStorageKey, config.resume);
+        applyResumeData(config.resume, true);
+        applied += 1;
+      }
+
+      if (typeof config.avatar === "string") {
+        applyAvatarData(config.avatar, true);
+        applied += 1;
+      }
+
+      if (!applied) {
+        throw new Error("没有找到可导入的 Ziinc Tool Box 配置。");
+      }
+    }
+
+    async function importToolBoxConfig(file) {
+      try {
+        const config = JSON.parse(await file.text());
+        applyToolBoxConfig(config);
+        showToast("配置已导入");
+      } catch (error) {
+        showToast(error.message || "配置导入失败");
+      } finally {
+        configImportInput.value = "";
+      }
+    }
+
+    function hertzNumber(key, label) {
+      const value = parseValue(hertzInputMap[key].value);
+      if (value === null) {
+        throw new Error(`${label}必须是数字。`);
+      }
+      return value;
+    }
+
+    function collectHertzInput() {
+      return {
+        model: hertzModel.value,
+        loadN: hertzNumber("load", "法向载荷"),
+        radius1M: hertzNumber("radius1", "接触体1半径") * 1e-3,
+        radius2M: hertzNumber("radius2", "接触体2半径") * 1e-3,
+        lengthM: hertzNumber("length", "接触长度") * 1e-3,
+        e1Pa: hertzNumber("e1", "接触体1弹性模量") * 1e9,
+        nu1: hertzNumber("nu1", "接触体1泊松比"),
+        e2Pa: hertzNumber("e2", "接触体2弹性模量") * 1e9,
+        nu2: hertzNumber("nu2", "接触体2泊松比")
+      };
+    }
+
+    function validateHertzMaterial(name, elasticModulusPa, poissonRatio) {
+      if (elasticModulusPa <= 0) throw new Error(`${name}弹性模量必须大于 0。`);
+      if (!(poissonRatio > -1 && poissonRatio < 0.5)) {
+        throw new Error(`${name}泊松比应在 -1 到 0.5 之间。`);
+      }
+    }
+
+    function equivalentHertzModulus(data) {
+      return 1 / (
+        (1 - data.nu1 ** 2) / data.e1Pa +
+        (1 - data.nu2 ** 2) / data.e2Pa
+      );
+    }
+
+    function calculatePointHertz(data, equivalentRadiusM, modelName) {
+      if (equivalentRadiusM <= 0) throw new Error("等效曲率半径必须大于 0。");
+      const equivalentElasticModulusPa = equivalentHertzModulus(data);
+      const contactRadiusM = ((3 * data.loadN * equivalentRadiusM) / (4 * equivalentElasticModulusPa)) ** (1 / 3);
+      const indentationM = contactRadiusM ** 2 / equivalentRadiusM;
+      const contactAreaM2 = Math.PI * contactRadiusM ** 2;
+      const maxPressurePa = 3 * data.loadN / (2 * contactAreaM2);
+      const meanPressurePa = data.loadN / contactAreaM2;
+      const normalStiffnessNPerM = 2 * equivalentElasticModulusPa * contactRadiusM;
+
+      return {
+        kind: "point",
+        modelName,
+        equivalentElasticModulusPa,
+        equivalentRadiusM,
+        contactRadiusM,
+        indentationM,
+        maxPressurePa,
+        meanPressurePa,
+        normalStiffnessNPerM,
+        contactDiameterM: contactRadiusM * 2,
+        loadN: data.loadN
+      };
+    }
+
+    function calculateLineHertz(data, equivalentRadiusM, modelName) {
+      if (equivalentRadiusM <= 0) throw new Error("等效曲率半径必须大于 0。");
+      if (data.lengthM <= 0) throw new Error("接触长度必须大于 0。");
+
+      const equivalentElasticModulusPa = equivalentHertzModulus(data);
+      const lineLoadNPerM = data.loadN / data.lengthM;
+      const halfWidthM = Math.sqrt((4 * lineLoadNPerM * equivalentRadiusM) / (Math.PI * equivalentElasticModulusPa));
+      const maxPressurePa = 2 * lineLoadNPerM / (Math.PI * halfWidthM);
+      const meanPressurePa = lineLoadNPerM / (2 * halfWidthM);
+      const logTerm = Math.max(Math.log((4 * equivalentRadiusM) / halfWidthM) - 1, 0.2);
+      const stiffnessPerLengthNPerM2 = Math.PI * equivalentElasticModulusPa / (2 * logTerm);
+      const normalStiffnessNPerM = stiffnessPerLengthNPerM2 * data.lengthM;
+
+      return {
+        kind: "line",
+        modelName,
+        equivalentElasticModulusPa,
+        equivalentRadiusM,
+        halfWidthM,
+        contactWidthM: halfWidthM * 2,
+        maxPressurePa,
+        meanPressurePa,
+        lineLoadNPerM,
+        stiffnessPerLengthNPerM2,
+        normalStiffnessNPerM,
+        loadN: data.loadN,
+        lengthM: data.lengthM
+      };
+    }
+
+    function calculateHertzContact(data) {
+      validateHertzMaterial("接触体1", data.e1Pa, data.nu1);
+      validateHertzMaterial("接触体2", data.e2Pa, data.nu2);
+      if (data.loadN <= 0) throw new Error("法向载荷必须大于 0。");
+      if (data.radius1M < 0 || data.radius2M < 0) throw new Error("曲率半径不能小于 0；平面请填 0。");
+
+      if (data.model === "sphereSphere") {
+        if (data.radius1M <= 0 || data.radius2M <= 0) throw new Error("球-球接触需要两个球半径都大于 0。");
+        return calculatePointHertz(data, 1 / (1 / data.radius1M + 1 / data.radius2M), "球-球接触");
+      }
+
+      if (data.model === "spherePlane") {
+        if (data.radius1M <= 0) throw new Error("球-平面接触需要球半径大于 0。");
+        return calculatePointHertz(data, data.radius1M, "球-平面接触");
+      }
+
+      if (data.model === "crossedCylindersEqual") {
+        if (data.radius1M <= 0) throw new Error("等半径圆柱交叉接触需要圆柱半径大于 0。");
+        return calculatePointHertz(data, data.radius1M, "等半径圆柱 90° 交叉接触");
+      }
+
+      if (data.model === "parallelCylinders") {
+        if (data.radius1M <= 0 || data.radius2M <= 0) throw new Error("平行圆柱接触需要两个圆柱半径都大于 0。");
+        return calculateLineHertz(data, 1 / (1 / data.radius1M + 1 / data.radius2M), "平行圆柱线接触");
+      }
+
+      throw new Error("请选择有效的赫兹接触模型。");
+    }
+
+    function hertzInputLabel(result) {
+      const data = collectHertzInput();
+      const radius1 = `${formatNumber(data.radius1M * 1000)} mm`;
+      const radius2 = `${formatNumber(data.radius2M * 1000)} mm`;
+      const material1 = `E1 ${formatNumber(data.e1Pa / 1e9)} GPa, v1 ${formatNumber(data.nu1)}`;
+      const material2 = `E2 ${formatNumber(data.e2Pa / 1e9)} GPa, v2 ${formatNumber(data.nu2)}`;
+      const lines = [`F ${formatNumber(data.loadN)} N`, material1, material2];
+
+      if (result.modelName.includes("球-平面")) {
+        lines.splice(1, 0, `R ${radius1}`, "平面 R = ∞");
+      } else if (result.modelName.includes("等半径圆柱")) {
+        lines.splice(1, 0, `R1 = R2 = ${radius1}`, "交叉角 90°");
+      } else {
+        lines.splice(1, 0, `R1 ${radius1}`, `R2 ${radius2}`);
+      }
+
+      if (result.kind === "line") {
+        lines.splice(3, 0, `L ${formatNumber(result.lengthM * 1000)} mm`, `q ${formatNumber(result.lineLoadNPerM / 1000)} N/mm`);
+      }
+
+      return lines;
+    }
+
+    function hertzOutputLabel(result) {
+      const common = [
+        `E* ${formatNumber(result.equivalentElasticModulusPa / 1e9)} GPa`,
+        `R* ${formatNumber(result.equivalentRadiusM * 1000)} mm`,
+        `p0 ${formatNumber(result.maxPressurePa / 1e6)} MPa`,
+        `k ${formatNumber(result.normalStiffnessNPerM * 1e-3)} N/mm`
+      ];
+
+      if (result.kind === "line") {
+        return [
+          `b ${formatNumber(result.halfWidthM * 1000)} mm`,
+          `2b ${formatNumber(result.contactWidthM * 1000)} mm`,
+          ...common
+        ];
+      }
+
+      return [
+        `a ${formatNumber(result.contactRadiusM * 1000)} mm`,
+        `2a ${formatNumber(result.contactDiameterM * 1000)} mm`,
+        `δ ${formatNumber(result.indentationM * 1e6)} um`,
+        ...common
+      ];
+    }
+
+    function svgTextLines(lines, x, y, color = "#202124") {
+      return lines.map((line, index) =>
+        `<text x="${x}" y="${y + index * 21}" fill="${color}" font-size="14">${line}</text>`
+      ).join("");
+    }
+
+    function svgTextLinesSized(lines, x, y, size = 13, gap = 18, color = "#202124") {
+      return lines.map((line, index) =>
+        `<text x="${x}" y="${y + index * gap}" fill="${color}" font-size="${size}">${line}</text>`
+      ).join("");
+    }
+
+    function hertzPointSketch(result) {
+      if (result.modelName.includes("球-平面")) {
+        return `
+          <circle cx="220" cy="178" r="86" fill="#e8f0fe" stroke="#1a73e8" stroke-width="3"/>
+          <line x1="88" y1="265" x2="352" y2="265" stroke="#5f6368" stroke-width="4"/>
+          <ellipse cx="220" cy="265" rx="54" ry="8" fill="#fbbc04" opacity=".85"/>
+          <line x1="220" y1="178" x2="220" y2="265" stroke="#188038" stroke-width="2" stroke-dasharray="5 5"/>
+          <text x="236" y="220" fill="#188038" font-size="14">R</text>
+          <path d="M220 42 L220 89" stroke="#d93025" stroke-width="4" marker-end="url(#arrow)"/>
+          <text x="234" y="72" fill="#d93025" font-size="16" font-weight="700">F</text>
+          <line x1="166" y1="286" x2="274" y2="286" stroke="#202124" stroke-width="2" marker-start="url(#arrowSmall)" marker-end="url(#arrowSmall)"/>
+          <text x="193" y="308" fill="#202124" font-size="14">2a</text>
+          <line x1="290" y1="258" x2="290" y2="220" stroke="#1a73e8" stroke-width="2" marker-end="url(#arrowSmall)"/>
+          <text x="300" y="244" fill="#1a73e8" font-size="14">δ</text>
+        `;
+      }
+
+      if (result.modelName.includes("等半径圆柱")) {
+        return `
+          <g transform="translate(220 190)">
+            <rect x="-150" y="-34" width="300" height="68" rx="34" fill="#e8f0fe" stroke="#1a73e8" stroke-width="3"/>
+            <rect x="-150" y="-34" width="300" height="68" rx="34" fill="#dff3e6" stroke="#188038" stroke-width="3" transform="rotate(90)"/>
+            <circle cx="0" cy="0" r="38" fill="#fbbc04" opacity=".88"/>
+            <line x1="0" y1="0" x2="80" y2="0" stroke="#202124" stroke-width="2" marker-end="url(#arrowSmall)"/>
+            <text x="38" y="-10" fill="#202124" font-size="14">a</text>
+          </g>
+          <path d="M220 42 L220 113" stroke="#d93025" stroke-width="4" marker-end="url(#arrow)"/>
+          <text x="234" y="78" fill="#d93025" font-size="16" font-weight="700">F</text>
+          <text x="78" y="112" fill="#1a73e8" font-size="14">R1 = R2</text>
+          <text x="274" y="314" fill="#5f6368" font-size="14">90°交叉</text>
+        `;
+      }
+
+      return `
+        <circle cx="220" cy="136" r="76" fill="#e8f0fe" stroke="#1a73e8" stroke-width="3"/>
+        <circle cx="220" cy="287" r="76" fill="#dff3e6" stroke="#188038" stroke-width="3"/>
+        <ellipse cx="220" cy="212" rx="50" ry="8" fill="#fbbc04" opacity=".88"/>
+        <line x1="220" y1="64" x2="220" y2="362" stroke="#5f6368" stroke-width="1.5" stroke-dasharray="6 6"/>
+        <path d="M220 30 L220 72" stroke="#d93025" stroke-width="4" marker-end="url(#arrow)"/>
+        <text x="236" y="56" fill="#d93025" font-size="16" font-weight="700">F</text>
+        <line x1="220" y1="136" x2="220" y2="212" stroke="#1a73e8" stroke-width="2" stroke-dasharray="5 5"/>
+        <line x1="220" y1="287" x2="220" y2="212" stroke="#188038" stroke-width="2" stroke-dasharray="5 5"/>
+        <text x="232" y="176" fill="#1a73e8" font-size="14">R1</text>
+        <text x="232" y="254" fill="#188038" font-size="14">R2</text>
+        <line x1="170" y1="232" x2="270" y2="232" stroke="#202124" stroke-width="2" marker-start="url(#arrowSmall)" marker-end="url(#arrowSmall)"/>
+        <text x="211" y="254" fill="#202124" font-size="14">2a</text>
+        <line x1="316" y1="202" x2="316" y2="222" stroke="#1a73e8" stroke-width="2" marker-start="url(#arrowSmall)" marker-end="url(#arrowSmall)"/>
+        <text x="327" y="217" fill="#1a73e8" font-size="14">δ</text>
+        <text x="132" y="94" fill="#1a73e8" font-size="14">球1</text>
+        <text x="132" y="332" fill="#188038" font-size="14">球2</text>
+      `;
+    }
+
+    function hertzLineSketch() {
+      return `
+        <rect x="92" y="82" width="268" height="74" rx="37" fill="#e8f0fe" stroke="#1a73e8" stroke-width="3"/>
+        <rect x="92" y="238" width="268" height="74" rx="37" fill="#dff3e6" stroke="#188038" stroke-width="3"/>
+        <rect x="128" y="190" width="196" height="28" rx="14" fill="#fbbc04" opacity=".85"/>
+        <path d="M226 34 L226 78" stroke="#d93025" stroke-width="4" marker-end="url(#arrow)"/>
+        <text x="240" y="63" fill="#d93025" font-size="16" font-weight="700">F</text>
+        <line x1="226" y1="119" x2="300" y2="119" stroke="#1a73e8" stroke-width="2" marker-end="url(#arrowSmall)"/>
+        <text x="258" y="108" fill="#1a73e8" font-size="14">R1</text>
+        <line x1="226" y1="275" x2="300" y2="275" stroke="#188038" stroke-width="2" marker-end="url(#arrowSmall)"/>
+        <text x="258" y="296" fill="#188038" font-size="14">R2</text>
+        <line x1="128" y1="232" x2="324" y2="232" stroke="#202124" stroke-width="2" marker-start="url(#arrowSmall)" marker-end="url(#arrowSmall)"/>
+        <text x="220" y="255" fill="#202124" font-size="14">L</text>
+        <line x1="346" y1="190" x2="346" y2="218" stroke="#202124" stroke-width="2" marker-start="url(#arrowSmall)" marker-end="url(#arrowSmall)"/>
+        <text x="356" y="208" fill="#202124" font-size="14">2b</text>
+      `;
+    }
+
+    function hertzSymbolLines(result) {
+      const common = [
+        "F：法向载荷",
+        "R1、R2：两接触体曲率半径",
+        "E1、E2：弹性模量",
+        "v1、v2：泊松比",
+        "E*：等效弹性模量",
+        "R*：等效曲率半径",
+        "p0：最大接触压力",
+        "k：法向接触刚度"
+      ];
+
+      if (result.kind === "line") {
+        return [
+          "L：圆柱有效接触长度",
+          "q：单位长度线载荷",
+          "b：接触带半宽",
+          "2b：接触带总宽",
+          ...common
+        ];
+      }
+
+      return [
+        "a：圆形接触半径",
+        "2a：接触直径",
+        "δ：两接触体总压入量",
+        ...common
+      ];
+    }
+
+    function buildHertzDiagram(result) {
+      const symbolLines = hertzSymbolLines(result);
+      const sketch = result.kind === "line" ? hertzLineSketch() : hertzPointSketch(result);
+
+      return `
+        <svg viewBox="0 0 860 430" role="img" aria-label="${result.modelName} 参数示意图">
+          <defs>
+            <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="#d93025"/>
+            </marker>
+            <marker id="arrowSmall" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 Z" fill="currentColor"/>
+            </marker>
+          </defs>
+          <rect x="0" y="0" width="860" height="430" fill="#fff"/>
+          <text x="24" y="36" fill="#202124" font-size="21" font-weight="700">${result.modelName}</text>
+          <text x="24" y="62" fill="#5f6368" font-size="14">Hertz 接触模型示意图</text>
+          <g transform="translate(16 54)">${sketch}</g>
+          <rect x="462" y="70" width="374" height="300" rx="8" fill="#f8fafd" stroke="#dadce0"/>
+          <text x="484" y="100" fill="#202124" font-size="16" font-weight="700">符号说明</text>
+          ${svgTextLines(symbolLines, 484, 130)}
+          <text x="484" y="394" fill="#5f6368" font-size="13">计算数值请查看上方结果卡片；复制结果会包含完整文字数据。</text>
+        </svg>
+      `;
+    }
+
+    function buildHertzText(result) {
+      if (result.kind === "point") {
+        return [
+          "Hertz 接触计算结果",
+          `模型: ${result.modelName}`,
+          `法向载荷 F: ${formatNumber(result.loadN)} N`,
+          `等效弹性模量 E*: ${formatNumber(result.equivalentElasticModulusPa / 1e9)} GPa`,
+          `等效曲率半径 R*: ${formatNumber(result.equivalentRadiusM * 1000)} mm`,
+          `接触半径 a: ${formatNumber(result.contactRadiusM * 1000)} mm`,
+          `接触直径 2a: ${formatNumber(result.contactDiameterM * 1000)} mm`,
+          `压入量 δ: ${formatNumber(result.indentationM * 1e6)} um`,
+          `平均接触压力 pm: ${formatNumber(result.meanPressurePa / 1e6)} MPa`,
+          `最大赫兹压力 p0: ${formatNumber(result.maxPressurePa / 1e6)} MPa`,
+          `法向接触刚度 k=dF/dδ: ${formatNumber(result.normalStiffnessNPerM)} N/m = ${formatNumber(result.normalStiffnessNPerM * 1e-3)} N/mm`
+        ].join("\n");
+      }
+
+      return [
+        "Hertz 接触计算结果",
+        `模型: ${result.modelName}`,
+        `总法向载荷 F: ${formatNumber(result.loadN)} N`,
+        `接触长度 L: ${formatNumber(result.lengthM * 1000)} mm`,
+        `线载荷 q=F/L: ${formatNumber(result.lineLoadNPerM / 1000)} N/mm`,
+        `等效弹性模量 E*: ${formatNumber(result.equivalentElasticModulusPa / 1e9)} GPa`,
+        `等效曲率半径 R*: ${formatNumber(result.equivalentRadiusM * 1000)} mm`,
+        `接触半宽 b: ${formatNumber(result.halfWidthM * 1000)} mm`,
+        `接触宽度 2b: ${formatNumber(result.contactWidthM * 1000)} mm`,
+        `平均接触压力 pm: ${formatNumber(result.meanPressurePa / 1e6)} MPa`,
+        `最大赫兹压力 p0: ${formatNumber(result.maxPressurePa / 1e6)} MPa`,
+        `法向接触刚度估算 k: ${formatNumber(result.normalStiffnessNPerM)} N/m = ${formatNumber(result.normalStiffnessNPerM * 1e-3)} N/mm`
+      ].join("\n");
+    }
+
+    function renderEmptyDataChart(message = "上传文件后显示折线图") {
+      dataChart.innerHTML = `
+        <svg viewBox="0 0 760 360" role="img" aria-label="空数据图表">
+          <rect width="760" height="360" fill="#fff"/>
+          <text x="36" y="72" fill="#202124" font-size="22" font-weight="700">数据折线图</text>
+          <text x="36" y="112" fill="#5f6368" font-size="15">${escapeHtml(message)}</text>
+          <line x1="72" y1="288" x2="700" y2="288" stroke="#dadce0" stroke-width="2"/>
+          <line x1="72" y1="64" x2="72" y2="288" stroke="#dadce0" stroke-width="2"/>
+        </svg>
+      `;
+    }
+
+    function parseDelimitedText(text, delimiter) {
+      const rows = [];
+      let row = [];
+      let cell = "";
+      let quoted = false;
+
+      for (let index = 0; index < text.length; index += 1) {
+        const char = text[index];
+        const next = text[index + 1];
+        if (char === '"') {
+          if (quoted && next === '"') {
+            cell += '"';
+            index += 1;
+          } else {
+            quoted = !quoted;
+          }
+        } else if (char === delimiter && !quoted) {
+          row.push(cell);
+          cell = "";
+        } else if ((char === "\n" || char === "\r") && !quoted) {
+          if (char === "\r" && next === "\n") index += 1;
+          row.push(cell);
+          if (row.some((item) => item.trim() !== "")) rows.push(row);
+          row = [];
+          cell = "";
+        } else {
+          cell += char;
+        }
+      }
+
+      row.push(cell);
+      if (row.some((item) => item.trim() !== "")) rows.push(row);
+      return rows;
+    }
+
+    async function inflateRaw(data) {
+      if (!("DecompressionStream" in window)) {
+        throw new Error("当前浏览器不支持离线解压 .xlsx，请改用 CSV/TSV 或更新浏览器。");
+      }
+      const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+      return new Uint8Array(await new Response(stream).arrayBuffer());
+    }
+
+    function readUint16(view, offset) {
+      return view.getUint16(offset, true);
+    }
+
+    function readUint32(view, offset) {
+      return view.getUint32(offset, true);
+    }
+
+    async function unzipXlsxEntries(arrayBuffer) {
+      const bytes = new Uint8Array(arrayBuffer);
+      const view = new DataView(arrayBuffer);
+      let eocd = -1;
+      for (let index = bytes.length - 22; index >= Math.max(0, bytes.length - 66000); index -= 1) {
+        if (readUint32(view, index) === 0x06054b50) {
+          eocd = index;
+          break;
+        }
+      }
+      if (eocd < 0) throw new Error("无法读取 .xlsx 压缩目录。");
+
+      const entryCount = readUint16(view, eocd + 10);
+      let centralOffset = readUint32(view, eocd + 16);
+      const decoder = new TextDecoder("utf-8");
+      const entries = {};
+
+      for (let entry = 0; entry < entryCount; entry += 1) {
+        if (readUint32(view, centralOffset) !== 0x02014b50) break;
+        const method = readUint16(view, centralOffset + 10);
+        const compressedSize = readUint32(view, centralOffset + 20);
+        const fileNameLength = readUint16(view, centralOffset + 28);
+        const extraLength = readUint16(view, centralOffset + 30);
+        const commentLength = readUint16(view, centralOffset + 32);
+        const localOffset = readUint32(view, centralOffset + 42);
+        const name = decoder.decode(bytes.slice(centralOffset + 46, centralOffset + 46 + fileNameLength));
+
+        if (!name.endsWith("/")) {
+          const localNameLength = readUint16(view, localOffset + 26);
+          const localExtraLength = readUint16(view, localOffset + 28);
+          const dataOffset = localOffset + 30 + localNameLength + localExtraLength;
+          const compressed = bytes.slice(dataOffset, dataOffset + compressedSize);
+          let content;
+          if (method === 0) {
+            content = compressed;
+          } else if (method === 8) {
+            content = await inflateRaw(compressed);
+          } else {
+            throw new Error(`不支持的 .xlsx 压缩方式：${method}`);
+          }
+          entries[name] = decoder.decode(content);
+        }
+
+        centralOffset += 46 + fileNameLength + extraLength + commentLength;
+      }
+
+      return entries;
+    }
+
+    function parseSharedStrings(xmlText) {
+      if (!xmlText) return [];
+      const xml = new DOMParser().parseFromString(xmlText, "application/xml");
+      return getXmlChildren(xml, "si").map((item) => {
+        return getXmlChildren(item, "t").map((text) => text.textContent || "").join("");
+      });
+    }
+
+    function getXmlChildren(node, localName) {
+      return Array.from(node.getElementsByTagName("*")).filter((item) => item.localName === localName);
+    }
+
+    function columnIndexFromCellRef(ref) {
+      const letters = String(ref || "").match(/[A-Z]+/i)?.[0] || "";
+      return letters.toUpperCase().split("").reduce((total, char) => total * 26 + char.charCodeAt(0) - 64, 0) - 1;
+    }
+
+    function cellValueFromXml(cell, sharedStrings) {
+      const type = cell.getAttribute("t");
+      if (type === "inlineStr") {
+        return getXmlChildren(cell, "t").map((node) => node.textContent || "").join("");
+      }
+      const raw = getXmlChildren(cell, "v")[0]?.textContent ?? "";
+      if (type === "s") return sharedStrings[Number(raw)] ?? "";
+      return raw;
+    }
+
+    async function parseXlsxFile(file) {
+      const entries = await unzipXlsxEntries(await file.arrayBuffer());
+      const sharedStrings = parseSharedStrings(entries["xl/sharedStrings.xml"]);
+      const sheetName = Object.keys(entries)
+        .filter((name) => /^xl\/worksheets\/sheet\d+\.xml$/.test(name))
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))[0];
+      if (!sheetName) throw new Error("未找到工作表。");
+
+      const xml = new DOMParser().parseFromString(entries[sheetName], "application/xml");
+      const rows = getXmlChildren(xml, "row").map((rowNode) => {
+        const row = [];
+        getXmlChildren(rowNode, "c").forEach((cell) => {
+          const index = columnIndexFromCellRef(cell.getAttribute("r"));
+          row[index] = cellValueFromXml(cell, sharedStrings);
+        });
+        return row;
+      }).filter((row) => row.some((item) => String(item ?? "").trim() !== ""));
+
+      return rows;
+    }
+
+    async function parseLegacyXlsFallback(file) {
+      const text = await file.text();
+      if (/<table[\s>]/i.test(text)) {
+        const doc = new DOMParser().parseFromString(text, "text/html");
+        const tableRows = Array.from(doc.querySelectorAll("tr")).map((row) => {
+          return Array.from(row.querySelectorAll("th,td")).map((cell) => cell.textContent.trim());
+        }).filter((row) => row.length);
+        if (tableRows.length) return tableRows;
+      }
+      if (text.includes("\t")) return parseDelimitedText(text, "\t");
+      if (text.includes(",")) return parseDelimitedText(text, ",");
+      throw new Error("旧版二进制 .xls 暂不支持离线解析，请先另存为 .xlsx、.csv 或 .tsv。");
+    }
+
+    async function parseDataFile(file) {
+      const extension = file.name.split(".").pop().toLowerCase();
+      if (extension === "xlsx") return parseXlsxFile(file);
+      if (extension === "csv" || extension === "txt") return parseDelimitedText(await file.text(), ",");
+      if (extension === "tsv") return parseDelimitedText(await file.text(), "\t");
+      if (extension === "xls") {
+        return parseLegacyXlsFallback(file);
+      }
+      throw new Error("暂只支持 .xlsx、.csv、.tsv、.txt 文件。");
+    }
+
+    function excelSerialToDate(value) {
+      const serial = Number(value);
+      if (!Number.isFinite(serial) || serial <= 20000 || serial >= 80000) return String(value ?? "");
+      const utc = Math.round((serial - 25569) * 86400 * 1000);
+      return new Date(utc).toLocaleString("zh-CN", { hour12: false });
+    }
+
+    function columnName(index) {
+      let name = "";
+      let value = index + 1;
+      while (value > 0) {
+        const remainder = (value - 1) % 26;
+        name = String.fromCharCode(65 + remainder) + name;
+        value = Math.floor((value - 1) / 26);
+      }
+      return name;
+    }
+
+    function normalizeDataRows(rows) {
+      if (rows.length < 2) throw new Error("数据至少需要表头和一行数据。");
+      const maxColumns = rows.reduce((max, row) => Math.max(max, row.length), 0);
+      let best = null;
+
+      for (let timeCol = 0; timeCol < Math.max(1, maxColumns - 1); timeCol += 1) {
+        const valueCol = timeCol + 1;
+        const numericRows = rows
+          .map((row, rowIndex) => ({ rowIndex, value: parseValue(row[valueCol]) }))
+          .filter((item) => item.value !== null);
+
+        if (!numericRows.length) continue;
+        const first = numericRows[0].rowIndex;
+        const afterFirstCount = numericRows.filter((item) => item.rowIndex >= first).length;
+        const score = afterFirstCount * 100 - timeCol;
+        if (!best || score > best.score) {
+          best = { timeCol, valueCol, firstDataRow: first, score, numericRows };
+        }
+      }
+
+      if (!best) throw new Error("没有找到纵向排列的数字测量列。");
+
+      const headerRow = best.firstDataRow > 0 ? rows[best.firstDataRow - 1] : [];
+      const headers = [
+        String(headerRow[best.timeCol] ?? `时间戳(${columnName(best.timeCol)}列)`).trim() || `时间戳(${columnName(best.timeCol)}列)`,
+        String(headerRow[best.valueCol] ?? `测量数据(${columnName(best.valueCol)}列)`).trim() || `测量数据(${columnName(best.valueCol)}列)`
+      ];
+      const points = [];
+
+      rows.slice(best.firstDataRow).forEach((row, offset) => {
+        const value = parseValue(row[best.valueCol]);
+        if (value === null) return;
+        const timeRaw = row[best.timeCol] ?? points.length + 1;
+        points.push({
+          time: excelSerialToDate(timeRaw),
+          value,
+          rowNumber: best.firstDataRow + offset + 1
+        });
+      });
+
+      if (!points.length) throw new Error("第二列没有可计算的数字数据。");
+      return {
+        headers,
+        points,
+        detected: {
+          timeColumn: columnName(best.timeCol),
+          valueColumn: columnName(best.valueCol),
+          firstDataRow: best.firstDataRow + 1
+        }
+      };
+    }
+
+    function calculateDataStats(points) {
+      const values = points.map((point) => point.value);
+      let maxIndex = 0;
+      let minIndex = 0;
+      values.forEach((value, index) => {
+        if (value > values[maxIndex]) maxIndex = index;
+        if (value < values[minIndex]) minIndex = index;
+      });
+      const max = values[maxIndex];
+      const min = values[minIndex];
+      const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+      const sigma = Math.sqrt(values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length);
+      return {
+        count: values.length,
+        max,
+        min,
+        pv: max - min,
+        mean,
+        sigma,
+        threeSigma: sigma * 3,
+        maxIndex,
+        minIndex
+      };
+    }
+
+    function renderDataStats(headers, points, stats, file, detected) {
+      const cards = [
+        ["最大值", stats.max, headers[1]],
+        ["最小值", stats.min, headers[1]],
+        ["PV值", stats.pv, "max-min"],
+        ["平均值", stats.mean, headers[1]],
+        ["3sigma", stats.threeSigma, "3σ"],
+        ["有效点数", stats.count, "points"]
+      ];
+
+      dataStatsCards.innerHTML = "";
+      cards.forEach(([title, value, unit]) => {
+        const card = document.createElement("div");
+        card.className = "result-card";
+        card.innerHTML = `<span>${escapeHtml(title)}</span><strong>${formatNumber(value)}</strong><span>${escapeHtml(unit)}</span>`;
+        dataStatsCards.append(card);
+      });
+
+      dataFileMeta.textContent = `${file.name} · ${stats.count} 个有效数据点`;
+      dataSummary.textContent = `最大值 ${formatNumber(stats.max)}，最小值 ${formatNumber(stats.min)}，PV ${formatNumber(stats.pv)}，平均值 ${formatNumber(stats.mean)}，3sigma ${formatNumber(stats.threeSigma)}。`;
+      dataChart.innerHTML = buildDataChart(headers, points, stats);
+      window.lastDataStatsText = [
+        "稳定性计算统计结果",
+        `文件: ${file.name}`,
+        `时间列: ${headers[0]}`,
+        `数据列: ${headers[1]}`,
+        `识别位置: ${detected.timeColumn}列 / ${detected.valueColumn}列，从第 ${detected.firstDataRow} 行开始`,
+        `有效点数: ${stats.count}`,
+        `最大值: ${formatNumber(stats.max)} @ ${points[stats.maxIndex].time}`,
+        `最小值: ${formatNumber(stats.min)} @ ${points[stats.minIndex].time}`,
+        `PV值: ${formatNumber(stats.pv)}`,
+        `平均值: ${formatNumber(stats.mean)}`,
+        `sigma: ${formatNumber(stats.sigma)}`,
+        `3sigma: ${formatNumber(stats.threeSigma)}`
+      ].join("\n");
+    }
+
+    function shortChartLabel(value) {
+      const text = String(value ?? "");
+      const time = text.match(/\b\d{1,2}:\d{2}(?::\d{2})?\b/);
+      if (time) return time[0];
+      return text.length > 18 ? `${text.slice(0, 15)}...` : text;
+    }
+
+    function buildDataChart(headers, points, stats) {
+      const width = 900;
+      const height = 430;
+      const left = 74;
+      const right = 34;
+      const top = 42;
+      const bottom = 70;
+      const plotWidth = width - left - right;
+      const plotHeight = height - top - bottom;
+      const values = points.map((point) => point.value);
+      let minY = Math.min(...values);
+      let maxY = Math.max(...values);
+      if (minY === maxY) {
+        minY -= 1;
+        maxY += 1;
+      }
+      const pad = (maxY - minY) * 0.08;
+      minY -= pad;
+      maxY += pad;
+      const x = (index) => left + (points.length === 1 ? plotWidth / 2 : index * plotWidth / (points.length - 1));
+      const y = (value) => top + (maxY - value) * plotHeight / (maxY - minY);
+      const polyline = points.map((point, index) => `${x(index)},${y(point.value)}`).join(" ");
+      const maxPoint = points[stats.maxIndex];
+      const minPoint = points[stats.minIndex];
+      const tickValues = Array.from({ length: 5 }, (_, index) => minY + (maxY - minY) * index / 4);
+      const xTicks = Array.from(new Set([0, Math.floor((points.length - 1) / 2), points.length - 1]));
+      const maxAnchor = stats.maxIndex > points.length * 0.72 ? "end" : "start";
+      const minAnchor = stats.minIndex > points.length * 0.72 ? "end" : "start";
+      const labelX = (index, anchor) => x(index) + (anchor === "end" ? -12 : 12);
+
+      return `
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="测量数据折线图">
+          <rect width="${width}" height="${height}" fill="#fff"/>
+          <text x="${left}" y="27" fill="#202124" font-size="20" font-weight="700">${escapeHtml(headers[1])}</text>
+          <text x="${width - right - 220}" y="27" fill="#5f6368" font-size="13">最大/最小值已高亮</text>
+          ${tickValues.map((value) => `
+            <line x1="${left}" y1="${y(value)}" x2="${width - right}" y2="${y(value)}" stroke="#eef1f5"/>
+            <text x="${left - 12}" y="${y(value) + 4}" text-anchor="end" fill="#5f6368" font-size="12">${formatNumber(value)}</text>
+          `).join("")}
+          <line x1="${left}" y1="${top}" x2="${left}" y2="${height - bottom}" stroke="#dadce0" stroke-width="2"/>
+          <line x1="${left}" y1="${height - bottom}" x2="${width - right}" y2="${height - bottom}" stroke="#dadce0" stroke-width="2"/>
+          <polyline points="${polyline}" fill="none" stroke="#1a73e8" stroke-width="2.5"/>
+          <circle cx="${x(stats.maxIndex)}" cy="${y(maxPoint.value)}" r="7" fill="#d93025"/>
+          <circle cx="${x(stats.minIndex)}" cy="${y(minPoint.value)}" r="7" fill="#188038"/>
+          <text x="${labelX(stats.maxIndex, maxAnchor)}" y="${y(maxPoint.value) - 10}" text-anchor="${maxAnchor}" fill="#d93025" font-size="13">Max ${formatNumber(stats.max)}</text>
+          <text x="${labelX(stats.minIndex, minAnchor)}" y="${y(minPoint.value) + 22}" text-anchor="${minAnchor}" fill="#188038" font-size="13">Min ${formatNumber(stats.min)}</text>
+          ${xTicks.map((index) => `
+            <line x1="${x(index)}" y1="${height - bottom}" x2="${x(index)}" y2="${height - bottom + 6}" stroke="#dadce0"/>
+            <text x="${x(index)}" y="${height - bottom + 24}" text-anchor="middle" fill="#5f6368" font-size="12">${escapeHtml(shortChartLabel(points[index].time))}</text>
+          `).join("")}
+          <rect x="${left}" y="${height - 34}" width="12" height="12" fill="#d93025"/>
+          <text x="${left + 18}" y="${height - 24}" fill="#5f6368" font-size="13">最大值</text>
+          <rect x="${left + 86}" y="${height - 34}" width="12" height="12" fill="#188038"/>
+          <text x="${left + 104}" y="${height - 24}" fill="#5f6368" font-size="13">最小值</text>
+        </svg>
+      `;
+    }
+
+    async function handleDataFile(file) {
+      try {
+        dataSummary.textContent = "正在读取文件...";
+        dataFileMeta.textContent = `${file.name} · 正在读取...`;
+        dataStatsCards.innerHTML = "";
+        renderEmptyDataChart("正在解析表格数据...");
+        const rows = await parseDataFile(file);
+        const { headers, points, detected } = normalizeDataRows(rows);
+        const stats = calculateDataStats(points);
+        renderDataStats(headers, points, stats, file, detected);
+        showToast("稳定性计算完成");
+      } catch (error) {
+        dataSummary.textContent = error.message;
+        dataFileMeta.textContent = `读取失败：${file.name}`;
+        dataStatsCards.innerHTML = "";
+        renderEmptyDataChart(error.message);
+        window.lastDataStatsText = "";
+      }
+    }
+
+    function renderHertzResult(result) {
+      const cards = result.kind === "point"
+        ? [
+            ["等效弹性模量", formatNumber(result.equivalentElasticModulusPa / 1e9), "GPa"],
+            ["等效曲率半径", formatNumber(result.equivalentRadiusM * 1000), "mm"],
+            ["接触半径 a", formatNumber(result.contactRadiusM * 1000), "mm"],
+            ["接触直径 2a", formatNumber(result.contactDiameterM * 1000), "mm"],
+            ["压入量 δ", formatNumber(result.indentationM * 1e6), "um"],
+            ["最大压力 p0", formatNumber(result.maxPressurePa / 1e6), "MPa"],
+            ["平均压力", formatNumber(result.meanPressurePa / 1e6), "MPa"],
+            ["法向刚度", formatNumber(result.normalStiffnessNPerM * 1e-3), "N/mm"]
+          ]
+        : [
+            ["等效弹性模量", formatNumber(result.equivalentElasticModulusPa / 1e9), "GPa"],
+            ["等效曲率半径", formatNumber(result.equivalentRadiusM * 1000), "mm"],
+            ["线载荷", formatNumber(result.lineLoadNPerM / 1000), "N/mm"],
+            ["接触半宽 b", formatNumber(result.halfWidthM * 1000), "mm"],
+            ["接触宽度 2b", formatNumber(result.contactWidthM * 1000), "mm"],
+            ["最大压力 p0", formatNumber(result.maxPressurePa / 1e6), "MPa"],
+            ["平均压力", formatNumber(result.meanPressurePa / 1e6), "MPa"],
+            ["法向刚度估算", formatNumber(result.normalStiffnessNPerM * 1e-3), "N/mm"]
+          ];
+
+      hertzCards.innerHTML = "";
+      cards.forEach(([title, value, unit]) => {
+        const card = document.createElement("div");
+        card.className = "result-card";
+        card.innerHTML = `<span>${title}</span><strong>${value}</strong><span>${unit}</span>`;
+        hertzCards.append(card);
+      });
+
+      hertzSummary.textContent = `模型：${result.modelName}。p0 = ${formatNumber(result.maxPressurePa / 1e6)} MPa，k = ${formatNumber(result.normalStiffnessNPerM * 1e-3)} N/mm`;
+      hertzDetail.innerHTML = buildHertzDiagram(result);
+      window.lastHertzText = buildHertzText(result);
+    }
+
+    function runHertzCalculation() {
+      try {
+        updateHertzModelUi(false);
+        const result = calculateHertzContact(collectHertzInput());
+        renderHertzResult(result);
+        return result;
+      } catch (error) {
+        hertzCards.innerHTML = "";
+        hertzSummary.textContent = error.message;
+        hertzDetail.innerHTML = `<svg viewBox="0 0 760 220" role="img" aria-label="参数错误"><rect width="760" height="220" fill="#fff"/><text x="28" y="70" fill="#d93025" font-size="20" font-weight="700">参数错误</text><text x="28" y="108" fill="#5f6368" font-size="15">${error.message}</text></svg>`;
+        window.lastHertzText = "";
+        return null;
+      }
+    }
+
+    function updateHertzModelUi(shouldCalculate = true) {
+      const model = hertzModel.value;
+      const modelText = {
+        sphereSphere: "两个球体受压形成圆形点接触。",
+        spherePlane: "球体与刚性或弹性平面受压形成圆形点接触。",
+        crossedCylindersEqual: "两个等半径圆柱体按 90° 交叉，局部形成圆形点接触。",
+        parallelCylinders: "两个中心轴平行的圆柱体形成线接触，按接触长度计算线载荷。"
+      };
+
+      hertzModelNote.textContent = modelText[model] || "";
+      hertzRadius2Field.classList.toggle("field-hidden", model === "spherePlane" || model === "crossedCylindersEqual");
+      hertzLengthField.classList.toggle("field-hidden", model !== "parallelCylinders");
+
+      if (model === "sphereSphere") {
+        hertzRadius1Label.textContent = "球1半径";
+        hertzRadius2Label.textContent = "球2半径";
+      } else if (model === "spherePlane") {
+        hertzRadius1Label.textContent = "球半径";
+      } else if (model === "crossedCylindersEqual") {
+        hertzRadius1Label.textContent = "圆柱半径";
+      } else {
+        hertzRadius1Label.textContent = "圆柱1半径";
+        hertzRadius2Label.textContent = "圆柱2半径";
+        if (parseValue(hertzInputMap.radius2.value) === 0) {
+          hertzInputMap.radius2.value = hertzInputMap.radius1.value;
+        }
+      }
+
+      if (shouldCalculate) {
+        runHertzCalculation();
+      }
+    }
+
+    function stiffnessNumber(key, label) {
+      const value = parseValue(stiffnessInputMap[key].value);
+      if (value === null) {
+        throw new Error(`${label}必须是数字。`);
+      }
+      return value;
+    }
+
+    function dot(a, b) {
+      return a.reduce((sum, value, index) => sum + value * b[index], 0);
+    }
+
+    function cross(a, b) {
+      return [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0]
+      ];
+    }
+
+    function vectorNorm(v) {
+      return Math.hypot(...v);
+    }
+
+    function normalize(v) {
+      const length = vectorNorm(v);
+      return v.map((value) => value / length);
+    }
+
+    function scaleVector(v, scale) {
+      return v.map((value) => value * scale);
+    }
+
+    function addVector(a, b) {
+      return a.map((value, index) => value + b[index]);
+    }
+
+    function subtractVector(a, b) {
+      return a.map((value, index) => value - b[index]);
+    }
+
+    function zeroMatrix(size) {
+      return Array.from({ length: size }, () => Array(size).fill(0));
+    }
+
+    function addDirectionStiffness(matrix, direction, position, k) {
+      if (k <= 0) return;
+      const arm = cross(position, direction);
+      const a = [...direction, ...arm];
+      for (let row = 0; row < 6; row += 1) {
+        for (let col = 0; col < 6; col += 1) {
+          matrix[row][col] += k * a[row] * a[col];
+        }
+      }
+    }
+
+    function basisFromNormal(normal) {
+      let trial = [0, 0, 1];
+      if (Math.abs(dot(trial, normal)) > 0.9) {
+        trial = [0, 1, 0];
+      }
+      const projected = subtractVector(trial, scaleVector(normal, dot(trial, normal)));
+      const t1 = normalize(projected);
+      const t2 = normalize(cross(normal, t1));
+      return [t1, t2];
+    }
+
+    function invertMatrix(matrix) {
+      const size = matrix.length;
+      const augmented = matrix.map((row, index) => [
+        ...row,
+        ...Array.from({ length: size }, (_, col) => (col === index ? 1 : 0))
+      ]);
+
+      for (let col = 0; col < size; col += 1) {
+        let pivotRow = col;
+        for (let row = col + 1; row < size; row += 1) {
+          if (Math.abs(augmented[row][col]) > Math.abs(augmented[pivotRow][col])) {
+            pivotRow = row;
+          }
+        }
+
+        const pivot = augmented[pivotRow][col];
+        if (Math.abs(pivot) < 1e-18) {
+          return null;
+        }
+
+        [augmented[col], augmented[pivotRow]] = [augmented[pivotRow], augmented[col]];
+        for (let item = 0; item < size * 2; item += 1) {
+          augmented[col][item] /= pivot;
+        }
+
+        for (let row = 0; row < size; row += 1) {
+          if (row === col) continue;
+          const factor = augmented[row][col];
+          for (let item = 0; item < size * 2; item += 1) {
+            augmented[row][item] -= factor * augmented[col][item];
+          }
+        }
+      }
+
+      return augmented.map((row) => row.slice(size));
+    }
+
+    function matrixInfinityNorm(matrix) {
+      return Math.max(...matrix.map((row) => row.reduce((sum, value) => sum + Math.abs(value), 0)));
+    }
+
+    function plasticLimit(material) {
+      const limits = [];
+      if (material.yieldStrengthPa > 0) limits.push(1.6 * material.yieldStrengthPa);
+      if (material.hardnessPa > 0) limits.push(material.hardnessPa);
+      return limits.length ? Math.min(...limits) : Infinity;
+    }
+
+    function validateMaterial(name, material) {
+      if (material.elasticModulusPa <= 0) throw new Error(`${name}弹性模量必须大于 0。`);
+      if (material.shearModulusPa <= 0) throw new Error(`${name}剪切模量必须大于 0。`);
+      if (!(material.poissonRatio > -1 && material.poissonRatio < 0.5)) {
+        throw new Error(`${name}泊松比应在 -1 到 0.5 之间。`);
+      }
+    }
+
+    function collectStiffnessInput() {
+      const ball = {
+        elasticModulusPa: stiffnessNumber("ballE", "小球弹性模量") * 1e9,
+        poissonRatio: stiffnessNumber("ballNu", "小球泊松比"),
+        shearModulusPa: stiffnessNumber("ballG", "小球剪切模量") * 1e9,
+        yieldStrengthPa: stiffnessNumber("ballYield", "小球屈服强度") * 1e6,
+        hardnessPa: stiffnessNumber("ballHardness", "小球硬度") * 9.80665e6
+      };
+      const groove = {
+        elasticModulusPa: stiffnessNumber("grooveE", "槽体弹性模量") * 1e9,
+        poissonRatio: stiffnessNumber("grooveNu", "槽体泊松比"),
+        shearModulusPa: stiffnessNumber("grooveG", "槽体剪切模量") * 1e9,
+        yieldStrengthPa: stiffnessNumber("grooveYield", "槽体屈服强度") * 1e6,
+        hardnessPa: stiffnessNumber("grooveHardness", "槽体硬度") * 9.80665e6
+      };
+
+      return {
+        ballDiameterM: stiffnessNumber("ballDiameter", "球体直径") * 1e-3,
+        grooveAngleRad: stiffnessNumber("grooveAngle", "V槽夹角") * Math.PI / 180,
+        pitchDiameterM: stiffnessNumber("pitchDiameter", "均布直径") * 1e-3,
+        frictionCoefficient: stiffnessNumber("mu", "摩擦系数"),
+        totalPreloadN: stiffnessNumber("preload", "总预紧力"),
+        ball,
+        groove
+      };
+    }
+
+    function equivalentElasticModulus(ball, groove) {
+      const invE = ((1 - ball.poissonRatio ** 2) / ball.elasticModulusPa) +
+        ((1 - groove.poissonRatio ** 2) / groove.elasticModulusPa);
+      if (invE <= 0) throw new Error("等效弹性模量无效。");
+      return 1 / invE;
+    }
+
+    function equivalentShearDenominator(ball, groove) {
+      const value = ((2 - ball.poissonRatio) / ball.shearModulusPa) +
+        ((2 - groove.poissonRatio) / groove.shearModulusPa);
+      if (value <= 0) throw new Error("等效剪切参数无效。");
+      return value;
+    }
+
+    function calculateBallVGroove(data) {
+      validateMaterial("小球", data.ball);
+      validateMaterial("槽体", data.groove);
+      if (data.ballDiameterM <= 0) throw new Error("球体直径必须大于 0。");
+      if (data.pitchDiameterM <= 0) throw new Error("均布直径必须大于 0。");
+      if (data.totalPreloadN <= 0) throw new Error("总预紧力必须大于 0。");
+      if (!(data.grooveAngleRad > 0 && data.grooveAngleRad < Math.PI)) {
+        throw new Error("V槽夹角必须在 0 到 180 度之间。");
+      }
+      if (data.frictionCoefficient < 0) throw new Error("摩擦系数不能小于 0。");
+
+      const ballRadius = data.ballDiameterM / 2;
+      const pitchRadius = data.pitchDiameterM / 2;
+      const normalTilt = Math.PI / 2 - data.grooveAngleRad / 2;
+      const groupPreload = data.totalPreloadN / 3;
+      const verticalComponent = Math.cos(normalTilt);
+      if (verticalComponent <= 1e-12) {
+        throw new Error("V槽夹角过小，无法由轴向预紧力得到有效接触力。");
+      }
+
+      const contactLoad = groupPreload / (2 * verticalComponent);
+      const eStar = equivalentElasticModulus(data.ball, data.groove);
+      const shearDen = equivalentShearDenominator(data.ball, data.groove);
+      const hertzC = (4 / 3) * eStar * Math.sqrt(ballRadius);
+      const indentation = (contactLoad / hertzC) ** (2 / 3);
+      const contactRadius = Math.sqrt(ballRadius * indentation);
+      const maxPressure = (3 * contactLoad) / (2 * Math.PI * contactRadius ** 2);
+      const kn = 2 * eStar * contactRadius;
+      const kt = data.frictionCoefficient > 0 ? 8 * contactRadius / shearDen : 0;
+      const stiffness = zeroMatrix(6);
+      const contacts = [];
+      const ballLimit = plasticLimit(data.ball);
+      const grooveLimit = plasticLimit(data.groove);
+
+      [0, 2 * Math.PI / 3, 4 * Math.PI / 3].forEach((angle, index) => {
+        const radial = [Math.cos(angle), Math.sin(angle), 0];
+        const grooveSide = [-Math.sin(angle), Math.cos(angle), 0];
+        const ballCenter = scaleVector(radial, pitchRadius);
+
+        [["+", 1], ["-", -1]].forEach(([side, sign]) => {
+          const normal = normalize(addVector(
+            [0, 0, Math.cos(normalTilt)],
+            scaleVector(grooveSide, sign * Math.sin(normalTilt))
+          ));
+          const contactPosition = subtractVector(ballCenter, scaleVector(normal, ballRadius));
+          const [t1, t2] = basisFromNormal(normal);
+          addDirectionStiffness(stiffness, normal, contactPosition, kn);
+          addDirectionStiffness(stiffness, t1, contactPosition, kt);
+          addDirectionStiffness(stiffness, t2, contactPosition, kt);
+          contacts.push({
+            group: index + 1,
+            side,
+            normal,
+            normalLoadN: contactLoad,
+            contactRadiusM: contactRadius,
+            indentationM: indentation,
+            maxPressurePa: maxPressure,
+            normalStiffnessNPerM: kn,
+            tangentialStiffnessNPerM: kt,
+            ballPlastic: maxPressure > ballLimit,
+            groovePlastic: maxPressure > grooveLimit
+          });
+        });
+      });
+
+      const flexibility = invertMatrix(stiffness);
+      const equivalent = flexibility ? dofLabels.map((_, index) => 1 / flexibility[index][index]) : null;
+      const conditionNumber = flexibility ? matrixInfinityNorm(stiffness) * matrixInfinityNorm(flexibility) : null;
+      return { contacts, stiffness, flexibility, equivalent, conditionNumber, contactLoad, groupPreload };
+    }
+
+    function scientific(value) {
+      if (!Number.isFinite(value)) return "-";
+      return value.toExponential(5);
+    }
+
+    function formatStiffnessNumber(value) {
+      if (!Number.isFinite(value)) return "";
+      if (Math.abs(value) >= 100000) {
+        return value.toExponential(3);
+      }
+      return new Intl.NumberFormat("zh-CN", {
+        maximumFractionDigits: 10
+      }).format(Number(value.toPrecision(12)));
+    }
+
+    function stiffnessValueText(value, index) {
+      if (!Number.isFinite(value)) return "不可逆";
+      const outputUnit = stiffnessOutputUnit.value;
+      const factor = index < 3 ? (outputUnit === "N/mm" ? 1e-3 : 1) : (outputUnit === "N/mm" ? 1000 : 1);
+      return formatStiffnessNumber(value * factor);
+    }
+
+    function stiffnessUnitText(index) {
+      if (index < 3) return stiffnessOutputUnit.value;
+      return stiffnessOutputUnit.value === "N/mm" ? "N*mm/rad" : "N*m/rad";
+    }
+
+    function formatStiffnessMatrix(matrix) {
+      const header = `        ${dofLabels.map((label) => label.padStart(13)).join("")}`;
+      const rows = matrix.map((row, index) => {
+        return `${dofLabels[index].padStart(5)} ${row.map((value) => scientific(value).padStart(13)).join("")}`;
+      });
+      return [header, ...rows].join("\n");
+    }
+
+    function stiffnessInputSnapshot() {
+      return {
+        ballDiameter: parseValue(stiffnessInputMap.ballDiameter.value) || 0,
+        grooveAngle: parseValue(stiffnessInputMap.grooveAngle.value) || 0,
+        pitchDiameter: parseValue(stiffnessInputMap.pitchDiameter.value) || 0,
+        preload: parseValue(stiffnessInputMap.preload.value) || 0,
+        mu: parseValue(stiffnessInputMap.mu.value) || 0
+      };
+    }
+
+    function buildStiffnessDiagram(result) {
+      const input = stiffnessInputSnapshot();
+      const firstContact = result.contacts[0];
+      const ballPlastic = result.contacts.some((contact) => contact.ballPlastic);
+      const groovePlastic = result.contacts.some((contact) => contact.groovePlastic);
+      const equivalent = result.equivalent || [];
+      const linearFactor = stiffnessOutputUnit.value === "N/mm" ? 1e-3 : 1;
+      const rotaryFactor = stiffnessOutputUnit.value === "N/mm" ? 1000 : 1;
+      const rotaryUnit = stiffnessOutputUnit.value === "N/mm" ? "N*mm/rad" : "N*m/rad";
+      const values = [
+        `Kx: ${formatStiffnessNumber((equivalent[0] || 0) * linearFactor)} ${stiffnessOutputUnit.value}`,
+        `Ky: ${formatStiffnessNumber((equivalent[1] || 0) * linearFactor)} ${stiffnessOutputUnit.value}`,
+        `Kz: ${formatStiffnessNumber((equivalent[2] || 0) * linearFactor)} ${stiffnessOutputUnit.value}`,
+        `Krx: ${formatStiffnessNumber((equivalent[3] || 0) * rotaryFactor)}`,
+        `Kry: ${formatStiffnessNumber((equivalent[4] || 0) * rotaryFactor)}`,
+        `Krz: ${formatStiffnessNumber((equivalent[5] || 0) * rotaryFactor)}`,
+        `rot: ${rotaryUnit}`
+      ];
+      const params = [
+        `D: ${formatNumber(input.ballDiameter)} mm`,
+        `PCD: ${formatNumber(input.pitchDiameter)} mm`,
+        `β: ${formatNumber(input.grooveAngle)}°`,
+        `Fp: ${formatNumber(input.preload)} N`,
+        `Fp/组: ${formatNumber(result.groupPreload)} N`,
+        `N/点: ${formatNumber(result.contactLoad)} N`,
+        `a: ${formatNumber(firstContact.contactRadiusM * 1000)} mm`,
+        `p0: ${formatNumber(firstContact.maxPressurePa / 1e6)} MPa`,
+        `μ: ${formatNumber(input.mu)}`
+      ];
+      const point = (angle, radius) => {
+        const rad = angle * Math.PI / 180;
+        return [260 + radius * Math.cos(rad), 218 + radius * Math.sin(rad)];
+      };
+      const ballGroups = [0, 120, 240].map((angle, index) => {
+        const [x, y] = point(angle, 112);
+        const [gx1, gy1] = point(angle, 74);
+        const [gx2, gy2] = point(angle, 152);
+        const tangentAngle = angle + 90;
+        const tx = Math.cos(tangentAngle * Math.PI / 180) * 24;
+        const ty = Math.sin(tangentAngle * Math.PI / 180) * 24;
+        return `
+          <line x1="${gx1 - tx}" y1="${gy1 - ty}" x2="${gx2 - tx}" y2="${gy2 - ty}" stroke="#1a73e8" stroke-width="4" stroke-linecap="round"/>
+          <line x1="${gx1 + tx}" y1="${gy1 + ty}" x2="${gx2 + tx}" y2="${gy2 + ty}" stroke="#1a73e8" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="${x}" cy="${y}" r="20" fill="#e8f0fe" stroke="#1a73e8" stroke-width="3"/>
+          <circle cx="${x - tx * 0.72}" cy="${y - ty * 0.72}" r="5" fill="#fbbc04"/>
+          <circle cx="${x + tx * 0.72}" cy="${y + ty * 0.72}" r="5" fill="#fbbc04"/>
+          <text x="${x - 5}" y="${y + 5}" fill="#202124" font-size="14" font-weight="700">${index + 1}</text>
+        `;
+      }).join("");
+      const paramLines = svgTextLinesSized(params, 502, 126, 12, 17);
+      const valueLines = svgTextLinesSized(values, 678, 126, 12, 17);
+
+      return `
+        <svg viewBox="0 0 980 470" role="img" aria-label="球-V槽刚度模型示意图">
+          <defs>
+            <marker id="stiffArrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="#d93025"/>
+            </marker>
+            <marker id="axisArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 Z" fill="#5f6368"/>
+            </marker>
+          </defs>
+          <rect width="980" height="470" fill="#fff"/>
+          <text x="28" y="38" fill="#202124" font-size="21" font-weight="700">三组球-V槽 120° 均布示意</text>
+          <text x="28" y="64" fill="#5f6368" font-size="14">V槽槽线径向布置，槽口朝 +Z，预紧沿 -Z（垂直屏幕向内）压入</text>
+          <g>
+            <circle cx="260" cy="218" r="152" fill="#f8fafd" stroke="#dadce0" stroke-width="2"/>
+            <circle cx="260" cy="218" r="112" fill="none" stroke="#dadce0" stroke-dasharray="6 6"/>
+            ${ballGroups}
+            <line x1="260" y1="218" x2="392" y2="218" stroke="#5f6368" stroke-width="2" marker-end="url(#axisArrow)"/>
+            <line x1="260" y1="218" x2="260" y2="86" stroke="#5f6368" stroke-width="2" marker-end="url(#axisArrow)"/>
+            <text x="400" y="223" fill="#5f6368" font-size="14">X</text>
+            <text x="250" y="78" fill="#5f6368" font-size="14">Y</text>
+            <circle cx="260" cy="218" r="20" fill="#fff" stroke="#d93025" stroke-width="3"/>
+            <line x1="248" y1="206" x2="272" y2="230" stroke="#d93025" stroke-width="3" stroke-linecap="round"/>
+            <line x1="272" y1="206" x2="248" y2="230" stroke="#d93025" stroke-width="3" stroke-linecap="round"/>
+            <text x="286" y="214" fill="#d93025" font-size="16" font-weight="700">Fp</text>
+            <text x="286" y="235" fill="#d93025" font-size="13">-Z 入屏</text>
+            <text x="80" y="396" fill="#5f6368" font-size="14">每组两个接触点，共 6 个 Hertz/Mindlin 接触点</text>
+            <text x="326" y="132" fill="#188038" font-size="14">接触点</text>
+            <line x1="316" y1="140" x2="294" y2="189" stroke="#188038" stroke-width="2" marker-end="url(#axisArrow)"/>
+          </g>
+          <rect x="484" y="82" width="172" height="300" rx="8" fill="#f8fafd" stroke="#dadce0"/>
+          <rect x="668" y="82" width="266" height="300" rx="8" fill="#f8fafd" stroke="#dadce0"/>
+          <text x="502" y="112" fill="#202124" font-size="15" font-weight="700">输入与接触</text>
+          ${paramLines}
+          <text x="678" y="112" fill="#202124" font-size="15" font-weight="700">等效刚度</text>
+          ${valueLines}
+          <text x="506" y="410" fill="${ballPlastic ? "#d93025" : "#188038"}" font-size="14">小球：${ballPlastic ? "塑性风险" : "弹性"}</text>
+          <text x="646" y="410" fill="${groovePlastic ? "#d93025" : "#188038"}" font-size="14">V槽：${groovePlastic ? "塑性风险" : "弹性"}</text>
+          <text x="506" y="434" fill="#5f6368" font-size="13">复制结果仍包含完整 6x6 刚度矩阵</text>
+        </svg>
+      `;
+    }
+
+    function stiffnessDetailText(result) {
+      const firstContact = result.contacts[0];
+      const ballPlastic = result.contacts.some((contact) => contact.ballPlastic);
+      const groovePlastic = result.contacts.some((contact) => contact.groovePlastic);
+      return [
+        `每组轴向预紧力：${formatNumber(result.groupPreload)} N`,
+        `每个接触点法向载荷：${formatNumber(result.contactLoad)} N`,
+        `最大赫兹接触压力：${formatNumber(firstContact.maxPressurePa / 1e6)} MPa`,
+        `接触半径：${formatNumber(firstContact.contactRadiusM * 1000)} mm，压入量：${formatNumber(firstContact.indentationM * 1e6)} um`,
+        `矩阵条件数估算：${result.conditionNumber ? scientific(result.conditionNumber) : "-"}`,
+        `小球：${ballPlastic ? "塑性风险" : "弹性"}，V槽：${groovePlastic ? "塑性风险" : "弹性"}`
+      ].join("；");
+    }
+
+    function renderStiffnessResult(result) {
+      stiffnessCards.innerHTML = "";
+      dofLabels.forEach((label, index) => {
+        const card = document.createElement("div");
+        card.className = "result-card";
+        card.innerHTML = `
+          <span>${label}</span>
+          <strong>${result.equivalent ? stiffnessValueText(result.equivalent[index], index) : "不可逆"}</strong>
+          <span>${result.equivalent ? stiffnessUnitText(index) : ""}</span>
+        `;
+        stiffnessCards.append(card);
+      });
+
+      const ballPlastic = result.contacts.some((contact) => contact.ballPlastic);
+      const groovePlastic = result.contacts.some((contact) => contact.groovePlastic);
+      stiffnessStatus.innerHTML = `
+        <span class="status-chip ${ballPlastic ? "warn" : "ok"}">小球：${ballPlastic ? "塑性风险" : "弹性"}</span>
+        <span class="status-chip ${groovePlastic ? "warn" : "ok"}">V槽：${groovePlastic ? "塑性风险" : "弹性"}</span>
+        <span class="status-chip">p0 ${formatNumber(result.contacts[0].maxPressurePa / 1e6)} MPa</span>
+      `;
+      stiffnessSummary.textContent = stiffnessDetailText(result);
+      const matrixText = formatStiffnessMatrix(result.stiffness);
+      stiffnessMatrix.innerHTML = buildStiffnessDiagram(result);
+      window.lastStiffnessText = [
+        "球-V槽刚度计算结果",
+        stiffnessSummary.textContent,
+        "",
+        "等效刚度",
+        ...dofLabels.map((label, index) => `${label}: ${result.equivalent ? stiffnessValueText(result.equivalent[index], index) : "不可逆"} ${result.equivalent ? stiffnessUnitText(index) : ""}`),
+        "",
+        "6x6 刚度矩阵 K，SI 单位",
+        matrixText
+      ].join("\n");
+    }
+
+    function runStiffnessCalculation() {
+      try {
+        const result = calculateBallVGroove(collectStiffnessInput());
+        renderStiffnessResult(result);
+        return result;
+      } catch (error) {
+        stiffnessCards.innerHTML = "";
+        stiffnessStatus.innerHTML = `<span class="status-chip warn">参数错误</span>`;
+        stiffnessSummary.textContent = error.message;
+        stiffnessMatrix.innerHTML = `<svg viewBox="0 0 760 220" role="img" aria-label="参数错误"><rect width="760" height="220" fill="#fff"/><text x="28" y="70" fill="#d93025" font-size="20" font-weight="700">参数错误</text><text x="28" y="108" fill="#5f6368" font-size="15">${error.message}</text></svg>`;
+        window.lastStiffnessText = "";
+        return null;
+      }
+    }
+
+    fromValue.addEventListener("input", () => {
+      state.editing = "from";
+      updateConversion();
+    });
+
+    toValue.addEventListener("input", () => {
+      state.editing = "to";
+      updateConversion();
+    });
+
+    fromUnit.addEventListener("change", () => {
+      state.editing = "from";
+      updateConversion();
+      renderQuickConversions();
+    });
+
+    toUnit.addEventListener("change", () => {
+      state.editing = "from";
+      updateConversion();
+      renderQuickConversions();
+    });
+
+    document.querySelector("#swapButton").addEventListener("click", () => {
+      const currentFrom = fromUnit.value;
+      fromUnit.value = toUnit.value;
+      toUnit.value = currentFrom;
+      state.editing = "from";
+      updateConversion();
+    });
+
+    document.querySelector("#copyResult").addEventListener("click", () => {
+      const text = `${toValue.value} ${getUnitLabel(toUnit.value)}`;
+      copyText(text);
+    });
+
+    document.querySelector("#clearValue").addEventListener("click", () => {
+      fromValue.value = "";
+      toValue.value = "";
+      formulaText.textContent = "";
+      fromValue.focus();
+    });
+
+    document.querySelectorAll("[data-copy]").forEach((button) => {
+      button.addEventListener("click", () => copyText(button.dataset.copy));
+    });
+
+    editProfile.addEventListener("click", () => {
+      setProfileEditMode(!profileEditMode);
+    });
+
+    exportConfig.addEventListener("click", exportToolBoxConfig);
+
+    importConfig.addEventListener("click", () => {
+      configImportInput.click();
+    });
+
+    configImportInput.addEventListener("change", () => {
+      const [file] = configImportInput.files;
+      if (file) {
+        importToolBoxConfig(file);
+      }
+    });
+
+    profileFields.forEach((field) => {
+      field.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          field.blur();
+        }
+      });
+      field.addEventListener("input", updateProfileCopyButtons);
+    });
+
+    editNotes.addEventListener("click", () => {
+      setNotesEditMode(!notesEditMode);
+    });
+
+    noteFields.forEach((field) => {
+      field.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          field.blur();
+        }
+      });
+    });
+
+    editResume.addEventListener("click", () => {
+      setResumeEditMode(!resumeEditMode);
+    });
+
+    avatarButton.addEventListener("click", () => {
+      avatarInput.click();
+    });
+
+    avatarInput.addEventListener("change", async () => {
+      const [file] = avatarInput.files;
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        showToast("请选择图片文件");
+        avatarInput.value = "";
+        return;
+      }
+
+      try {
+        const dataUrl = await createAvatarDataUrl(file);
+        setAvatarImage(dataUrl);
+        localStorage.setItem(avatarStorageKey, dataUrl);
+        showToast("头像已更新");
+      } catch (error) {
+        showToast("无法读取图片");
+      } finally {
+        avatarInput.value = "";
+      }
+    });
+
+    document.querySelector("#calculateHertz").addEventListener("click", () => {
+      if (runHertzCalculation()) {
+        showToast("赫兹接触计算完成");
+      }
+    });
+
+    document.querySelector("#resetHertz").addEventListener("click", () => {
+      Object.entries(hertzDefaults).forEach(([key, value]) => {
+        hertzInputMap[key].value = value;
+      });
+      hertzModel.value = hertzModelDefault;
+      updateHertzModelUi(false);
+      runHertzCalculation();
+      showToast("赫兹参数已重置");
+    });
+
+    document.querySelector("#copyHertz").addEventListener("click", () => {
+      if (!window.lastHertzText) {
+        runHertzCalculation();
+      }
+      copyText(window.lastHertzText || "");
+    });
+
+    hertzInputs.forEach((input) => {
+      input.addEventListener("change", runHertzCalculation);
+    });
+
+    hertzModel.addEventListener("change", updateHertzModelUi);
+
+    dataFileInput.addEventListener("change", () => {
+      const [file] = dataFileInput.files;
+      if (file) {
+        handleDataFile(file);
+      }
+    });
+
+    document.querySelector("#copyDataStats").addEventListener("click", () => {
+      copyText(window.lastDataStatsText || "暂无数据统计结果");
+    });
+
+    document.querySelector("#calculateStiffness").addEventListener("click", () => {
+      if (runStiffnessCalculation()) {
+        showToast("刚度计算完成");
+      }
+    });
+
+    document.querySelector("#resetStiffness").addEventListener("click", () => {
+      Object.entries(stiffnessDefaults).forEach(([key, value]) => {
+        stiffnessInputMap[key].value = value;
+      });
+      stiffnessOutputUnit.value = "N/mm";
+      runStiffnessCalculation();
+      showToast("参数已重置");
+    });
+
+    document.querySelector("#copyStiffness").addEventListener("click", () => {
+      if (!window.lastStiffnessText) {
+        runStiffnessCalculation();
+      }
+      copyText(window.lastStiffnessText || "");
+    });
+
+    stiffnessInputs.forEach((input) => {
+      input.addEventListener("change", runStiffnessCalculation);
+    });
+
+    stiffnessOutputUnit.addEventListener("change", runStiffnessCalculation);
+
+    pageButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        setActivePage(button.dataset.pageTarget);
+      });
+    });
+
+    window.addEventListener("hashchange", () => {
+      setActivePage(window.location.hash.replace("#", ""), false);
+    });
+
+    document.querySelector("#todayText").textContent = new Intl.DateTimeFormat("zh-CN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      weekday: "long"
+    }).format(new Date());
+
+    renderTabs();
+    renderUnits();
+    renderQuickConversions();
+    loadProfileData();
+    loadNotesData();
+    loadResumeData();
+    loadAvatarImage();
+    updateConversion();
+    renderEmptyDataChart();
+    updateHertzModelUi(false);
+    runHertzCalculation();
+    runStiffnessCalculation();
+    setActivePage(window.location.hash.replace("#", "") || "home", false);
+  </script>
+</body>
+</html>

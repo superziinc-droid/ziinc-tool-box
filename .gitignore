@@ -1,0 +1,4 @@
+ziinc-tool-box-config-*.json
+*.local.json
+.DS_Store
+Thumbs.db
