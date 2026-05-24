@@ -57,7 +57,12 @@ if ($hasChanges) {
   Git commit -m "Deploy Ziinc Tool Box"
 }
 
-$remote = Git remote get-url origin 2>$null
+$remote = $null
+try {
+  $remote = Git remote get-url origin 2>$null
+} catch {
+  $remote = $null
+}
 if (-not $remote) {
   if ($Visibility -eq "private") {
     Gh repo create $RepoName --private --source . --remote origin --push
