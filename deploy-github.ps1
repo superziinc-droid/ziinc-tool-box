@@ -24,6 +24,8 @@ $GitExe = Resolve-Tool "git" @(
   "C:\Program Files\Git\cmd\git.exe",
   "C:\Program Files (x86)\Git\cmd\git.exe"
 )
+$env:PATH = "$(Split-Path $GitExe);$env:PATH"
+
 $GhExe = Resolve-Tool "gh" @(
   "E:\GitHub CLI\gh.exe",
   "C:\Program Files\GitHub CLI\gh.exe"
