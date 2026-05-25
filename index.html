@@ -783,6 +783,47 @@
       overflow-wrap: anywhere;
     }
 
+    .data-column-select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 12px;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .analysis-table {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: auto;
+      max-height: 320px;
+    }
+
+    .analysis-table table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .analysis-table th,
+    .analysis-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #eef1f5;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .analysis-table th {
+      position: sticky;
+      top: 0;
+      background: #f8fafd;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
     .data-chart {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -1204,7 +1245,10 @@
         <section class="panel stiffness-panel" aria-label="稳定性计算" data-page-section="data">
           <div class="section-title-row">
             <h2>稳定性计算</h2>
-            <button class="text-button" type="button" id="copyDataStats">复制统计</button>
+            <div class="utility-actions">
+              <button class="text-button" type="button" id="copyDataStats">复制统计</button>
+              <button class="text-button" type="button" id="exportDataCsv">下载CSV</button>
+            </div>
           </div>
 
           <div class="stiffness-grid">
@@ -1217,13 +1261,21 @@
 
               <div class="input-section">
                 <h3>处理说明</h3>
-                <div class="data-meta">自动跳过空值和非数字测量值；3sigma 使用总体标准差 σ，计算为 3σ。</div>
+                <div class="data-meta">第一列作为时间轴，后续所有数字列都会参与分析；3sigma 使用样本标准差 s，计算为 3s。</div>
+              </div>
+
+              <div class="input-section">
+                <h3>规格限</h3>
+                <label class="calc-field">下限 LSL <input id="dataLsl" inputmode="decimal" placeholder="可选"><span class="calc-unit">-</span></label>
+                <label class="calc-field">上限 USL <input id="dataUsl" inputmode="decimal" placeholder="可选"><span class="calc-unit">-</span></label>
               </div>
             </div>
 
             <div class="stiffness-results">
+              <select class="data-column-select" id="dataSeriesSelect" aria-label="选择稳定性数据列" hidden></select>
               <div class="result-cards" id="dataStatsCards"></div>
-              <div class="detail-text" id="dataSummary">上传文件后将显示最大值、最小值、PV值、平均值和 3sigma。</div>
+              <div class="detail-text" id="dataSummary">上传文件后将显示最大值、最小值、PV值、平均值、RMS、样本 3sigma 和能力指数。</div>
+              <div class="analysis-table" id="dataMetricsTable" aria-label="多列稳定性统计表"></div>
               <div class="data-chart" id="dataChart" aria-label="测量数据折线图"></div>
             </div>
           </div>
@@ -1496,6 +1548,11 @@
     const dataStatsCards = document.querySelector("#dataStatsCards");
     const dataSummary = document.querySelector("#dataSummary");
     const dataChart = document.querySelector("#dataChart");
+    const dataSeriesSelect = document.querySelector("#dataSeriesSelect");
+    const dataMetricsTable = document.querySelector("#dataMetricsTable");
+    const dataLsl = document.querySelector("#dataLsl");
+    const dataUsl = document.querySelector("#dataUsl");
+    const exportDataCsv = document.querySelector("#exportDataCsv");
     const pageLayout = document.querySelector(".layout");
     const mainStack = document.querySelector(".main-stack");
     const pageButtons = Array.from(document.querySelectorAll("[data-page-target]"));
@@ -2561,53 +2618,62 @@
       let best = null;
 
       for (let timeCol = 0; timeCol < Math.max(1, maxColumns - 1); timeCol += 1) {
-        const valueCol = timeCol + 1;
-        const numericRows = rows
-          .map((row, rowIndex) => ({ rowIndex, value: parseValue(row[valueCol]) }))
-          .filter((item) => item.value !== null);
+        const valueColumns = [];
+        for (let col = timeCol + 1; col < maxColumns; col += 1) {
+          const numericRows = rows
+            .map((row, rowIndex) => ({ rowIndex, value: parseValue(row[col]) }))
+            .filter((item) => item.value !== null);
+          if (numericRows.length) {
+            valueColumns.push({ column: col, numericRows });
+          }
+        }
 
-        if (!numericRows.length) continue;
-        const first = numericRows[0].rowIndex;
-        const afterFirstCount = numericRows.filter((item) => item.rowIndex >= first).length;
-        const score = afterFirstCount * 100 - timeCol;
+        if (!valueColumns.length) continue;
+        const first = Math.min(...valueColumns.map((item) => item.numericRows[0].rowIndex));
+        const numericCount = valueColumns.reduce((sum, item) => {
+          return sum + item.numericRows.filter((row) => row.rowIndex >= first).length;
+        }, 0);
+        const score = numericCount * 100 + valueColumns.length * 10 - timeCol;
         if (!best || score > best.score) {
-          best = { timeCol, valueCol, firstDataRow: first, score, numericRows };
+          best = { timeCol, valueColumns, firstDataRow: first, score };
         }
       }
 
       if (!best) throw new Error("没有找到纵向排列的数字测量列。");
 
       const headerRow = best.firstDataRow > 0 ? rows[best.firstDataRow - 1] : [];
-      const headers = [
-        String(headerRow[best.timeCol] ?? `时间戳(${columnName(best.timeCol)}列)`).trim() || `时间戳(${columnName(best.timeCol)}列)`,
-        String(headerRow[best.valueCol] ?? `测量数据(${columnName(best.valueCol)}列)`).trim() || `测量数据(${columnName(best.valueCol)}列)`
-      ];
-      const points = [];
+      const timeHeader = String(headerRow[best.timeCol] ?? `时间戳(${columnName(best.timeCol)}列)`).trim() || `时间戳(${columnName(best.timeCol)}列)`;
+      const series = best.valueColumns.map(({ column }) => {
+        const label = String(headerRow[column] ?? `测量数据(${columnName(column)}列)`).trim() || `测量数据(${columnName(column)}列)`;
+        const points = [];
 
-      rows.slice(best.firstDataRow).forEach((row, offset) => {
-        const value = parseValue(row[best.valueCol]);
-        if (value === null) return;
-        const timeRaw = row[best.timeCol] ?? points.length + 1;
-        points.push({
-          time: excelSerialToDate(timeRaw),
-          value,
-          rowNumber: best.firstDataRow + offset + 1
+        rows.slice(best.firstDataRow).forEach((row, offset) => {
+          const value = parseValue(row[column]);
+          if (value === null) return;
+          const timeRaw = row[best.timeCol] ?? points.length + 1;
+          points.push({
+            time: excelSerialToDate(timeRaw),
+            value,
+            rowNumber: best.firstDataRow + offset + 1
+          });
         });
-      });
 
-      if (!points.length) throw new Error("第二列没有可计算的数字数据。");
+        return { key: columnName(column), label, points };
+      }).filter((item) => item.points.length);
+
+      if (!series.length) throw new Error("没有可计算的数字数据列。");
       return {
-        headers,
-        points,
+        headers: [timeHeader, series[0].label],
+        series,
         detected: {
           timeColumn: columnName(best.timeCol),
-          valueColumn: columnName(best.valueCol),
+          valueColumns: series.map((item) => item.key),
           firstDataRow: best.firstDataRow + 1
         }
       };
     }
 
-    function calculateDataStats(points) {
+    function calculateDataStats(points, lsl = null, usl = null) {
       const values = points.map((point) => point.value);
       let maxIndex = 0;
       let minIndex = 0;
@@ -2618,7 +2684,21 @@
       const max = values[maxIndex];
       const min = values[minIndex];
       const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
-      const sigma = Math.sqrt(values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length);
+      const sumSquares = values.reduce((sum, value) => sum + (value - mean) ** 2, 0);
+      const sigma = values.length > 1 ? Math.sqrt(sumSquares / (values.length - 1)) : 0;
+      const threeSigma = sigma * 3;
+      const rms = Math.sqrt(values.reduce((sum, value) => sum + value ** 2, 0) / values.length);
+      const movingRanges = values.slice(1).map((value, index) => Math.abs(value - values[index]));
+      const movingRangeMean = movingRanges.length
+        ? movingRanges.reduce((sum, value) => sum + value, 0) / movingRanges.length
+        : 0;
+      const outlierCount = sigma > 0
+        ? values.filter((value) => Math.abs(value - mean) > threeSigma).length
+        : 0;
+      const cp = lsl !== null && usl !== null && sigma > 0 ? (usl - lsl) / (6 * sigma) : null;
+      const cpk = lsl !== null && usl !== null && sigma > 0
+        ? Math.min((usl - mean) / (3 * sigma), (mean - lsl) / (3 * sigma))
+        : null;
       return {
         count: values.length,
         max,
@@ -2626,47 +2706,207 @@
         pv: max - min,
         mean,
         sigma,
-        threeSigma: sigma * 3,
+        threeSigma,
+        rms,
+        movingRangeMean,
+        outlierCount,
+        cp,
+        cpk,
         maxIndex,
         minIndex
       };
     }
 
-    function renderDataStats(headers, points, stats, file, detected) {
+    function formatOptional(value) {
+      return value === null || value === undefined || !Number.isFinite(value) ? "-" : formatNumber(value);
+    }
+
+    function getDataLimits() {
+      const lsl = dataLsl.value.trim() === "" ? null : parseValue(dataLsl.value);
+      const usl = dataUsl.value.trim() === "" ? null : parseValue(dataUsl.value);
+      if ((dataLsl.value.trim() !== "" && lsl === null) || (dataUsl.value.trim() !== "" && usl === null)) {
+        throw new Error("规格限必须是数字。");
+      }
+      if (lsl !== null && usl !== null && usl <= lsl) {
+        throw new Error("上限 USL 必须大于下限 LSL。");
+      }
+      return { lsl, usl };
+    }
+
+    function renderMetricsTable(analysis) {
+      const rows = analysis.series.map((item) => {
+        const stats = item.stats;
+        return `
+          <tr>
+            <td>${escapeHtml(item.label)}</td>
+            <td>${formatNumber(stats.count)}</td>
+            <td>${formatNumber(stats.max)}</td>
+            <td>${formatNumber(stats.min)}</td>
+            <td>${formatNumber(stats.pv)}</td>
+            <td>${formatNumber(stats.mean)}</td>
+            <td>${formatNumber(stats.rms)}</td>
+            <td>${formatNumber(stats.movingRangeMean)}</td>
+            <td>${formatNumber(stats.sigma)}</td>
+            <td>${formatNumber(stats.threeSigma)}</td>
+            <td>${formatNumber(stats.outlierCount)}</td>
+            <td>${formatOptional(stats.cp)}</td>
+            <td>${formatOptional(stats.cpk)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      dataMetricsTable.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>数据列</th>
+              <th>点数</th>
+              <th>最大值</th>
+              <th>最小值</th>
+              <th>PV</th>
+              <th>均值</th>
+              <th>RMS</th>
+              <th>平均MR</th>
+              <th>样本 s</th>
+              <th>3s</th>
+              <th>超3s点</th>
+              <th>Cp</th>
+              <th>Cpk</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    function populateDataSeriesSelect(analysis, selectedKey) {
+      dataSeriesSelect.innerHTML = analysis.series.map((item) => {
+        return `<option value="${escapeHtml(item.key)}">${escapeHtml(item.label)} (${escapeHtml(item.key)}列)</option>`;
+      }).join("");
+      dataSeriesSelect.value = analysis.series.some((item) => item.key === selectedKey)
+        ? selectedKey
+        : analysis.series[0].key;
+      dataSeriesSelect.hidden = analysis.series.length <= 1;
+    }
+
+    function renderDataAnalysis(analysis, selectedKey = dataSeriesSelect.value) {
+      populateDataSeriesSelect(analysis, selectedKey);
+      const selected = analysis.series.find((item) => item.key === dataSeriesSelect.value) || analysis.series[0];
+      const stats = selected.stats;
       const cards = [
-        ["最大值", stats.max, headers[1]],
-        ["最小值", stats.min, headers[1]],
+        ["最大值", stats.max, selected.label],
+        ["最小值", stats.min, selected.label],
         ["PV值", stats.pv, "max-min"],
-        ["平均值", stats.mean, headers[1]],
-        ["3sigma", stats.threeSigma, "3σ"],
-        ["有效点数", stats.count, "points"]
+        ["平均值", stats.mean, selected.label],
+        ["RMS", stats.rms, "root mean square"],
+        ["平均MR", stats.movingRangeMean, "moving range"],
+        ["样本3sigma", stats.threeSigma, "3s"],
+        ["超3s点", stats.outlierCount, "points"],
+        ["Cp / Cpk", stats.cp === null || stats.cpk === null ? "未设置" : `${formatNumber(stats.cp)} / ${formatNumber(stats.cpk)}`, "需 LSL/USL"]
       ];
 
       dataStatsCards.innerHTML = "";
       cards.forEach(([title, value, unit]) => {
         const card = document.createElement("div");
         card.className = "result-card";
-        card.innerHTML = `<span>${escapeHtml(title)}</span><strong>${formatNumber(value)}</strong><span>${escapeHtml(unit)}</span>`;
+        const display = typeof value === "number" ? formatNumber(value) : value;
+        card.innerHTML = `<span>${escapeHtml(title)}</span><strong>${escapeHtml(display)}</strong><span>${escapeHtml(unit)}</span>`;
         dataStatsCards.append(card);
       });
 
-      dataFileMeta.textContent = `${file.name} · ${stats.count} 个有效数据点`;
-      dataSummary.textContent = `最大值 ${formatNumber(stats.max)}，最小值 ${formatNumber(stats.min)}，PV ${formatNumber(stats.pv)}，平均值 ${formatNumber(stats.mean)}，3sigma ${formatNumber(stats.threeSigma)}。`;
-      dataChart.innerHTML = buildDataChart(headers, points, stats);
+      renderMetricsTable(analysis);
+      dataFileMeta.textContent = `${analysis.fileName} · ${analysis.series.length} 个数据列 · 当前 ${selected.label} ${stats.count} 个有效点`;
+      const specText = analysis.limits.lsl !== null && analysis.limits.usl !== null
+        ? `，Cp ${formatOptional(stats.cp)}，Cpk ${formatOptional(stats.cpk)}`
+        : "，填写 LSL/USL 后计算 Cp/Cpk";
+      dataSummary.textContent = `${selected.label}：最大值 ${formatNumber(stats.max)}，最小值 ${formatNumber(stats.min)}，PV ${formatNumber(stats.pv)}，均值 ${formatNumber(stats.mean)}，RMS ${formatNumber(stats.rms)}，平均MR ${formatNumber(stats.movingRangeMean)}，样本 3sigma ${formatNumber(stats.threeSigma)}，超 3s 点 ${formatNumber(stats.outlierCount)}${specText}。`;
+      dataChart.innerHTML = buildDataChart([analysis.timeHeader, selected.label], selected.points, stats);
       window.lastDataStatsText = [
         "稳定性计算统计结果",
-        `文件: ${file.name}`,
-        `时间列: ${headers[0]}`,
-        `数据列: ${headers[1]}`,
-        `识别位置: ${detected.timeColumn}列 / ${detected.valueColumn}列，从第 ${detected.firstDataRow} 行开始`,
-        `有效点数: ${stats.count}`,
-        `最大值: ${formatNumber(stats.max)} @ ${points[stats.maxIndex].time}`,
-        `最小值: ${formatNumber(stats.min)} @ ${points[stats.minIndex].time}`,
-        `PV值: ${formatNumber(stats.pv)}`,
-        `平均值: ${formatNumber(stats.mean)}`,
-        `sigma: ${formatNumber(stats.sigma)}`,
-        `3sigma: ${formatNumber(stats.threeSigma)}`
+        `文件: ${analysis.fileName}`,
+        `时间列: ${analysis.timeHeader}`,
+        `数据列: ${analysis.series.map((item) => `${item.label}(${item.key}列)`).join(", ")}`,
+        `识别位置: ${analysis.detected.timeColumn}列 / ${analysis.detected.valueColumns.join(", ")}列，从第 ${analysis.detected.firstDataRow} 行开始`,
+        `规格限: LSL ${formatOptional(analysis.limits.lsl)}, USL ${formatOptional(analysis.limits.usl)}`,
+        "",
+        ...analysis.series.map((item) => {
+          const itemStats = item.stats;
+          return [
+            `[${item.label}]`,
+            `有效点数: ${formatNumber(itemStats.count)}`,
+            `最大值: ${formatNumber(itemStats.max)} @ ${item.points[itemStats.maxIndex].time}`,
+            `最小值: ${formatNumber(itemStats.min)} @ ${item.points[itemStats.minIndex].time}`,
+            `PV值: ${formatNumber(itemStats.pv)}`,
+            `平均值: ${formatNumber(itemStats.mean)}`,
+            `RMS: ${formatNumber(itemStats.rms)}`,
+            `平均MR: ${formatNumber(itemStats.movingRangeMean)}`,
+            `样本s: ${formatNumber(itemStats.sigma)}`,
+            `样本3sigma: ${formatNumber(itemStats.threeSigma)}`,
+            `超3s点: ${formatNumber(itemStats.outlierCount)}`,
+            `Cp: ${formatOptional(itemStats.cp)}`,
+            `Cpk: ${formatOptional(itemStats.cpk)}`
+          ].join("\n");
+        })
       ].join("\n");
+    }
+
+    function refreshDataAnalysis(selectedKey = dataSeriesSelect.value) {
+      const analysis = window.lastDataAnalysis;
+      if (!analysis) return;
+      try {
+        analysis.limits = getDataLimits();
+        analysis.series.forEach((item) => {
+          item.stats = calculateDataStats(item.points, analysis.limits.lsl, analysis.limits.usl);
+        });
+        renderDataAnalysis(analysis, selectedKey);
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
+
+    function csvCell(value) {
+      const text = String(value ?? "");
+      return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    }
+
+    function exportMetricsCsv() {
+      const analysis = window.lastDataAnalysis;
+      if (!analysis) {
+        showToast("暂无统计结果");
+        return;
+      }
+
+      const headers = ["数据列", "点数", "最大值", "最小值", "PV", "均值", "RMS", "平均MR", "样本s", "3s", "超3s点", "Cp", "Cpk"];
+      const rows = analysis.series.map((item) => {
+        const stats = item.stats;
+        return [
+          item.label,
+          stats.count,
+          stats.max,
+          stats.min,
+          stats.pv,
+          stats.mean,
+          stats.rms,
+          stats.movingRangeMean,
+          stats.sigma,
+          stats.threeSigma,
+          stats.outlierCount,
+          formatOptional(stats.cp),
+          formatOptional(stats.cpk)
+        ];
+      });
+      const csv = [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\n");
+      const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const safeName = (analysis.fileName || "稳定性分析").replace(/\.[^.]+$/, "").replace(/[\\/:*?"<>|]+/g, "-");
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${safeName}-稳定性统计.csv`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast("统计CSV已下载");
     }
 
     function shortChartLabel(value) {
@@ -2705,6 +2945,10 @@
       const maxAnchor = stats.maxIndex > points.length * 0.72 ? "end" : "start";
       const minAnchor = stats.minIndex > points.length * 0.72 ? "end" : "start";
       const labelX = (index, anchor) => x(index) + (anchor === "end" ? -12 : 12);
+      const outlierPoints = stats.sigma > 0
+        ? points.map((point, index) => ({ point, index }))
+          .filter((item) => Math.abs(item.point.value - stats.mean) > stats.threeSigma)
+        : [];
 
       return `
         <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="测量数据折线图">
@@ -2718,6 +2962,9 @@
           <line x1="${left}" y1="${top}" x2="${left}" y2="${height - bottom}" stroke="#dadce0" stroke-width="2"/>
           <line x1="${left}" y1="${height - bottom}" x2="${width - right}" y2="${height - bottom}" stroke="#dadce0" stroke-width="2"/>
           <polyline points="${polyline}" fill="none" stroke="#1a73e8" stroke-width="2.5"/>
+          ${outlierPoints.map(({ point, index }) => `
+            <circle cx="${x(index)}" cy="${y(point.value)}" r="9" fill="none" stroke="#a142f4" stroke-width="2.5"/>
+          `).join("")}
           <circle cx="${x(stats.maxIndex)}" cy="${y(maxPoint.value)}" r="7" fill="#d93025"/>
           <circle cx="${x(stats.minIndex)}" cy="${y(minPoint.value)}" r="7" fill="#188038"/>
           <text x="${labelX(stats.maxIndex, maxAnchor)}" y="${y(maxPoint.value) - 10}" text-anchor="${maxAnchor}" fill="#d93025" font-size="13">Max ${formatNumber(stats.max)}</text>
@@ -2730,6 +2977,8 @@
           <text x="${left + 18}" y="${height - 24}" fill="#5f6368" font-size="13">最大值</text>
           <rect x="${left + 86}" y="${height - 34}" width="12" height="12" fill="#188038"/>
           <text x="${left + 104}" y="${height - 24}" fill="#5f6368" font-size="13">最小值</text>
+          <circle cx="${left + 186}" cy="${height - 28}" r="7" fill="none" stroke="#a142f4" stroke-width="2"/>
+          <text x="${left + 200}" y="${height - 24}" fill="#5f6368" font-size="13">超3s</text>
         </svg>
       `;
     }
@@ -2739,18 +2988,36 @@
         dataSummary.textContent = "正在读取文件...";
         dataFileMeta.textContent = `${file.name} · 正在读取...`;
         dataStatsCards.innerHTML = "";
+        dataMetricsTable.innerHTML = "";
+        dataSeriesSelect.innerHTML = "";
+        dataSeriesSelect.hidden = true;
         renderEmptyDataChart("正在解析表格数据...");
         const rows = await parseDataFile(file);
-        const { headers, points, detected } = normalizeDataRows(rows);
-        const stats = calculateDataStats(points);
-        renderDataStats(headers, points, stats, file, detected);
+        const normalized = normalizeDataRows(rows);
+        const limits = getDataLimits();
+        const analysis = {
+          fileName: file.name,
+          timeHeader: normalized.headers[0],
+          series: normalized.series.map((item) => ({
+            ...item,
+            stats: calculateDataStats(item.points, limits.lsl, limits.usl)
+          })),
+          detected: normalized.detected,
+          limits
+        };
+        window.lastDataAnalysis = analysis;
+        renderDataAnalysis(analysis);
         showToast("稳定性计算完成");
       } catch (error) {
         dataSummary.textContent = error.message;
         dataFileMeta.textContent = `读取失败：${file.name}`;
         dataStatsCards.innerHTML = "";
+        dataMetricsTable.innerHTML = "";
+        dataSeriesSelect.innerHTML = "";
+        dataSeriesSelect.hidden = true;
         renderEmptyDataChart(error.message);
         window.lastDataStatsText = "";
+        window.lastDataAnalysis = null;
       }
     }
 
@@ -3429,9 +3696,21 @@
       }
     });
 
+    dataSeriesSelect.addEventListener("change", () => {
+      refreshDataAnalysis(dataSeriesSelect.value);
+    });
+
+    [dataLsl, dataUsl].forEach((input) => {
+      input.addEventListener("input", () => {
+        refreshDataAnalysis(dataSeriesSelect.value);
+      });
+    });
+
     document.querySelector("#copyDataStats").addEventListener("click", () => {
       copyText(window.lastDataStatsText || "暂无数据统计结果");
     });
+
+    exportDataCsv.addEventListener("click", exportMetricsCsv);
 
     document.querySelector("#calculateStiffness").addEventListener("click", () => {
       if (runStiffnessCalculation()) {
