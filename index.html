@@ -824,6 +824,37 @@
       font-weight: 600;
     }
 
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 44px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .toggle-row input {
+      width: 20px;
+      min-height: 20px;
+      padding: 0;
+      accent-color: var(--blue);
+    }
+
+    .surface-plot-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .surface-plot-grid .data-chart {
+      min-height: 330px;
+    }
+
+    .surface-plot-grid .data-chart svg {
+      min-width: 520px;
+    }
+
     .data-chart {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -964,7 +995,8 @@
       .quick-conversions,
       .note-grid,
       .stiffness-grid,
-      .result-cards {
+      .result-cards,
+      .surface-plot-grid {
         grid-template-columns: 1fr;
       }
 
@@ -1034,6 +1066,7 @@
       <button class="nav-item" type="button" data-page-target="hertz">赫兹接触</button>
       <button class="nav-item" type="button" data-page-target="stiffness">球-V槽刚度</button>
       <button class="nav-item" type="button" data-page-target="data">稳定性计算</button>
+      <button class="nav-item" type="button" data-page-target="surface">面型分析</button>
       <button class="nav-item" type="button" data-page-target="notes">常用信息</button>
     </nav>
 
@@ -1277,6 +1310,44 @@
               <div class="detail-text" id="dataSummary">上传文件后将显示最大值、最小值、PV值、平均值、RMS、样本 3sigma 和能力指数。</div>
               <div class="analysis-table" id="dataMetricsTable" aria-label="多列稳定性统计表"></div>
               <div class="data-chart" id="dataChart" aria-label="测量数据折线图"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel stiffness-panel" aria-label="面型稳定性分析" data-page-section="surface">
+          <div class="section-title-row">
+            <h2>面型分析</h2>
+            <div class="utility-actions">
+              <button class="text-button" type="button" id="copySurfaceStats">复制结果</button>
+              <button class="text-button" type="button" id="exportSurfaceSvg">下载SVG报告</button>
+            </div>
+          </div>
+
+          <div class="stiffness-grid">
+            <div class="stiffness-form">
+              <div class="upload-box">
+                <label for="surfaceFileInput">上传 CSV / Excel 面型数据</label>
+                <input id="surfaceFileInput" type="file" accept=".xlsx,.xls,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv">
+                <div class="data-meta" id="surfaceFileMeta">默认读取前 5 列：x、y、z1、z2、timestamp；计算 z = z1 + z2。</div>
+              </div>
+
+              <div class="input-section">
+                <h3>分析设置</h3>
+                <label class="toggle-row" for="surfaceSigmaToggle">
+                  <span>3-Sigma 残差滤波</span>
+                  <input id="surfaceSigmaToggle" type="checkbox" checked>
+                </label>
+                <div class="data-meta">先拟合平面并按残差样本标准差剔除超 3s 点，再重新拟合并计算指标。</div>
+              </div>
+            </div>
+
+            <div class="stiffness-results">
+              <div class="result-cards" id="surfaceCards"></div>
+              <div class="detail-text" id="surfaceSummary">上传面型数据后将显示 RMS、Rx、Ry、Mean Z、TTV 和残差指标。</div>
+              <div class="surface-plot-grid">
+                <div class="data-chart" id="surfacePlot2d" aria-label="2D 面型点云图"></div>
+                <div class="data-chart" id="surfacePlot3d" aria-label="3D 拟合平面示意图"></div>
+              </div>
             </div>
           </div>
         </section>
@@ -1553,6 +1624,15 @@
     const dataLsl = document.querySelector("#dataLsl");
     const dataUsl = document.querySelector("#dataUsl");
     const exportDataCsv = document.querySelector("#exportDataCsv");
+    const surfaceFileInput = document.querySelector("#surfaceFileInput");
+    const surfaceFileMeta = document.querySelector("#surfaceFileMeta");
+    const surfaceSigmaToggle = document.querySelector("#surfaceSigmaToggle");
+    const surfaceCards = document.querySelector("#surfaceCards");
+    const surfaceSummary = document.querySelector("#surfaceSummary");
+    const surfacePlot2d = document.querySelector("#surfacePlot2d");
+    const surfacePlot3d = document.querySelector("#surfacePlot3d");
+    const copySurfaceStats = document.querySelector("#copySurfaceStats");
+    const exportSurfaceSvg = document.querySelector("#exportSurfaceSvg");
     const pageLayout = document.querySelector(".layout");
     const mainStack = document.querySelector(".main-stack");
     const pageButtons = Array.from(document.querySelectorAll("[data-page-target]"));
@@ -1619,6 +1699,10 @@
 
       if (activePage === "data" && !dataChart.innerHTML) {
         renderEmptyDataChart();
+      }
+
+      if (activePage === "surface" && !surfacePlot2d.innerHTML) {
+        renderEmptySurfacePlots();
       }
 
       if (updateHash) {
@@ -3021,6 +3105,374 @@
       }
     }
 
+    function renderEmptySurfacePlots(message = "上传面型数据后显示点云与拟合平面") {
+      const empty = `
+        <svg viewBox="0 0 620 360" role="img" aria-label="空面型图">
+          <rect width="620" height="360" fill="#fff"/>
+          <text x="32" y="74" fill="#202124" font-size="22" font-weight="700">面型分析</text>
+          <text x="32" y="112" fill="#5f6368" font-size="15">${escapeHtml(message)}</text>
+          <line x1="86" y1="285" x2="536" y2="285" stroke="#dadce0" stroke-width="2"/>
+          <line x1="86" y1="80" x2="86" y2="285" stroke="#dadce0" stroke-width="2"/>
+        </svg>
+      `;
+      surfacePlot2d.innerHTML = empty;
+      surfacePlot3d.innerHTML = empty;
+    }
+
+    function parseSurfaceRows(rows) {
+      if (rows.length < 3) throw new Error("面型数据至少需要 3 个有效点。");
+      let firstDataRow = rows.findIndex((row) => {
+        return [0, 1, 2, 3].every((index) => parseValue(row[index]) !== null);
+      });
+      if (firstDataRow < 0) throw new Error("未找到 x、y、z1、z2 数字列。");
+
+      const points = [];
+      rows.slice(firstDataRow).forEach((row, offset) => {
+        const x = parseValue(row[0]);
+        const y = parseValue(row[1]);
+        const z1 = parseValue(row[2]);
+        const z2 = parseValue(row[3]);
+        if ([x, y, z1, z2].some((value) => value === null)) return;
+        points.push({
+          x,
+          y,
+          z1,
+          z2,
+          z: z1 + z2,
+          time: excelSerialToDate(row[4] ?? points.length + 1),
+          rowNumber: firstDataRow + offset + 1
+        });
+      });
+
+      if (points.length < 3) throw new Error("有效面型点少于 3 个，无法拟合平面。");
+      return { points, firstDataRow: firstDataRow + 1 };
+    }
+
+    function solve3x3(matrix, vector) {
+      const a = matrix.map((row, index) => [...row, vector[index]]);
+      for (let col = 0; col < 3; col += 1) {
+        let pivot = col;
+        for (let row = col + 1; row < 3; row += 1) {
+          if (Math.abs(a[row][col]) > Math.abs(a[pivot][col])) pivot = row;
+        }
+        if (Math.abs(a[pivot][col]) < 1e-14) throw new Error("点云分布不足以拟合平面。");
+        [a[col], a[pivot]] = [a[pivot], a[col]];
+        const divisor = a[col][col];
+        for (let item = col; item < 4; item += 1) a[col][item] /= divisor;
+        for (let row = 0; row < 3; row += 1) {
+          if (row === col) continue;
+          const factor = a[row][col];
+          for (let item = col; item < 4; item += 1) a[row][item] -= factor * a[col][item];
+        }
+      }
+      return [a[0][3], a[1][3], a[2][3]];
+    }
+
+    function fitSurfacePlane(points) {
+      const sums = points.reduce((acc, point) => {
+        acc.xx += point.x * point.x;
+        acc.xy += point.x * point.y;
+        acc.x += point.x;
+        acc.yy += point.y * point.y;
+        acc.y += point.y;
+        acc.xz += point.x * point.z;
+        acc.yz += point.y * point.z;
+        acc.z += point.z;
+        return acc;
+      }, { xx: 0, xy: 0, x: 0, yy: 0, y: 0, xz: 0, yz: 0, z: 0 });
+
+      const matrix = [
+        [sums.xx, sums.xy, sums.x],
+        [sums.xy, sums.yy, sums.y],
+        [sums.x, sums.y, points.length]
+      ];
+      const [a, b, c] = solve3x3(matrix, [sums.xz, sums.yz, sums.z]);
+      return { a, b, c };
+    }
+
+    function surfaceResiduals(points, plane) {
+      return points.map((point) => point.z - (plane.a * point.x + plane.b * point.y + plane.c));
+    }
+
+    function sampleStd(values) {
+      if (values.length < 2) return 0;
+      const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+      return Math.sqrt(values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (values.length - 1));
+    }
+
+    function applySurfaceSigma(points) {
+      if (points.length < 3) return { points: [...points], removed: 0 };
+      const plane = fitSurfacePlane(points);
+      const residuals = surfaceResiduals(points, plane);
+      const mean = residuals.reduce((sum, value) => sum + value, 0) / residuals.length;
+      const sigma = sampleStd(residuals);
+      if (sigma <= 1e-12) return { points: [...points], removed: 0 };
+      const filtered = points.filter((_, index) => Math.abs(residuals[index] - mean) <= 3 * sigma);
+      return { points: filtered, removed: points.length - filtered.length };
+    }
+
+    function calculateSurfaceAnalysis(rawPoints, sigmaEnabled) {
+      const filtered = sigmaEnabled ? applySurfaceSigma(rawPoints) : { points: [...rawPoints], removed: 0 };
+      if (filtered.points.length < 3) throw new Error("3-Sigma 滤波后有效点少于 3 个，无法拟合。");
+      const plane = fitSurfacePlane(filtered.points);
+      const residuals = surfaceResiduals(filtered.points, plane);
+      const zValues = filtered.points.map((point) => point.z);
+      const residualMean = residuals.reduce((sum, value) => sum + value, 0) / residuals.length;
+      const residualRms = Math.sqrt(residuals.reduce((sum, value) => sum + value ** 2, 0) / residuals.length);
+      const meanZ = zValues.reduce((sum, value) => sum + value, 0) / zValues.length;
+      const maxZ = Math.max(...zValues);
+      const minZ = Math.min(...zValues);
+      return {
+        rawCount: rawPoints.length,
+        points: filtered.points,
+        removed: filtered.removed,
+        sigmaEnabled,
+        plane,
+        residuals,
+        metrics: {
+          rmsZ0: Math.sqrt(zValues.reduce((sum, value) => sum + value ** 2, 0) / zValues.length),
+          rxUrRad: Math.atan(plane.b) * 1e6,
+          ryUrRad: Math.atan(-plane.a) * 1e6,
+          meanZ,
+          ttv: maxZ - minZ,
+          residualMean,
+          residualRms,
+          residualPv: Math.max(...residuals) - Math.min(...residuals),
+          residualSigma: sampleStd(residuals)
+        }
+      };
+    }
+
+    function colorRamp(value, min, max) {
+      const t = max === min ? 0.5 : Math.max(0, Math.min(1, (value - min) / (max - min)));
+      if (t < 0.5) {
+        const k = t / 0.5;
+        return `rgb(${Math.round(26 + 162 * k)}, ${Math.round(115 + 53 * k)}, ${Math.round(232 - 149 * k)})`;
+      }
+      const k = (t - 0.5) / 0.5;
+      return `rgb(${Math.round(188 + 67 * k)}, ${Math.round(168 + 20 * k)}, ${Math.round(83 - 79 * k)})`;
+    }
+
+    function bounds(values) {
+      let min = Math.min(...values);
+      let max = Math.max(...values);
+      if (min === max) {
+        min -= 1;
+        max += 1;
+      }
+      return { min, max };
+    }
+
+    function buildSurface2dSvg(analysis) {
+      const width = 620;
+      const height = 360;
+      const left = 68;
+      const right = 58;
+      const top = 46;
+      const bottom = 54;
+      const points = analysis.points;
+      const xb = bounds(points.map((point) => point.x / 1000));
+      const yb = bounds(points.map((point) => point.y / 1000));
+      const zb = bounds(points.map((point) => point.z));
+      const plotW = width - left - right;
+      const plotH = height - top - bottom;
+      const x = (value) => left + ((value / 1000 - xb.min) / (xb.max - xb.min)) * plotW;
+      const y = (value) => top + (1 - ((value / 1000 - yb.min) / (yb.max - yb.min))) * plotH;
+      const maxPoints = 1200;
+      const step = Math.max(1, Math.ceil(points.length / maxPoints));
+      const visible = points.filter((_, index) => index % step === 0);
+
+      return `
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="2D 面型点云图">
+          <rect width="${width}" height="${height}" fill="#fff"/>
+          <text x="${left}" y="28" fill="#202124" font-size="18" font-weight="700">2D 面型点云图</text>
+          <text x="${width - right - 140}" y="28" fill="#5f6368" font-size="12">${analysis.sigmaEnabled ? "已滤波" : "原始数据"}</text>
+          <rect x="${left}" y="${top}" width="${plotW}" height="${plotH}" fill="#f8fafd" stroke="#dadce0"/>
+          ${visible.map((point) => `
+            <circle cx="${x(point.x)}" cy="${y(point.y)}" r="3.2" fill="${colorRamp(point.z, zb.min, zb.max)}" opacity=".88"/>
+          `).join("")}
+          <line x1="${left}" y1="${height - bottom}" x2="${width - right}" y2="${height - bottom}" stroke="#5f6368"/>
+          <line x1="${left}" y1="${top}" x2="${left}" y2="${height - bottom}" stroke="#5f6368"/>
+          <text x="${left + plotW / 2}" y="${height - 15}" text-anchor="middle" fill="#5f6368" font-size="12">X (mm)</text>
+          <text x="18" y="${top + plotH / 2}" text-anchor="middle" fill="#5f6368" font-size="12" transform="rotate(-90 18 ${top + plotH / 2})">Y (mm)</text>
+          <text x="${width - right + 14}" y="${top + 10}" fill="#5f6368" font-size="12">Z</text>
+          <rect x="${width - right + 14}" y="${top + 26}" width="14" height="${plotH - 52}" fill="url(#surfaceGrad)"/>
+          <defs>
+            <linearGradient id="surfaceGrad" x1="0" x2="0" y1="1" y2="0">
+              <stop offset="0%" stop-color="#1a73e8"/>
+              <stop offset="50%" stop-color="#bca853"/>
+              <stop offset="100%" stop-color="#ffbc04"/>
+            </linearGradient>
+          </defs>
+          <text x="${width - right + 34}" y="${top + 38}" fill="#5f6368" font-size="11">${formatNumber(zb.max)}</text>
+          <text x="${width - right + 34}" y="${top + plotH - 20}" fill="#5f6368" font-size="11">${formatNumber(zb.min)}</text>
+        </svg>
+      `;
+    }
+
+    function projectSurfacePoint(x, y, z, xb, yb, zb) {
+      const nx = (x / 1000 - xb.min) / (xb.max - xb.min) - 0.5;
+      const ny = (y / 1000 - yb.min) / (yb.max - yb.min) - 0.5;
+      const nz = (z - zb.min) / (zb.max - zb.min) - 0.5;
+      return [
+        310 + (nx - ny) * 310,
+        188 + (nx + ny) * 90 - nz * 150
+      ];
+    }
+
+    function buildSurface3dSvg(analysis) {
+      const width = 620;
+      const height = 360;
+      const points = analysis.points;
+      const xb = bounds(points.map((point) => point.x / 1000));
+      const yb = bounds(points.map((point) => point.y / 1000));
+      const zValues = points.map((point) => point.z);
+      const planeZ = (x, y) => analysis.plane.a * x + analysis.plane.b * y + analysis.plane.c;
+      const corners = [
+        [xb.min * 1000, yb.min * 1000],
+        [xb.max * 1000, yb.min * 1000],
+        [xb.max * 1000, yb.max * 1000],
+        [xb.min * 1000, yb.max * 1000]
+      ];
+      const planeCornerZ = corners.map(([x, y]) => planeZ(x, y));
+      const zb = bounds([...zValues, ...planeCornerZ]);
+      const cornerPoints = corners.map(([x, y], index) => projectSurfacePoint(x, y, planeCornerZ[index], xb, yb, zb));
+      const maxPoints = 900;
+      const step = Math.max(1, Math.ceil(points.length / maxPoints));
+      const visible = points.filter((_, index) => index % step === 0);
+      const planePath = cornerPoints.map((point, index) => `${index === 0 ? "M" : "L"} ${point[0]} ${point[1]}`).join(" ") + " Z";
+
+      return `
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="3D 拟合平面示意图">
+          <rect width="${width}" height="${height}" fill="#fff"/>
+          <text x="32" y="30" fill="#202124" font-size="18" font-weight="700">3D 拟合平面示意</text>
+          <path d="${planePath}" fill="#d93025" opacity=".24" stroke="#d93025" stroke-width="2"/>
+          ${visible.map((point) => {
+            const [px, py] = projectSurfacePoint(point.x, point.y, point.z, xb, yb, zb);
+            return `<circle cx="${px}" cy="${py}" r="3" fill="${colorRamp(point.z, zb.min, zb.max)}" opacity=".9"/>`;
+          }).join("")}
+          <line x1="96" y1="292" x2="220" y2="330" stroke="#5f6368" marker-end="url(#surfaceAxis)"/>
+          <line x1="96" y1="292" x2="34" y2="324" stroke="#5f6368" marker-end="url(#surfaceAxis)"/>
+          <line x1="96" y1="292" x2="96" y2="206" stroke="#5f6368" marker-end="url(#surfaceAxis)"/>
+          <text x="226" y="338" fill="#5f6368" font-size="12">X</text>
+          <text x="26" y="336" fill="#5f6368" font-size="12">Y</text>
+          <text x="86" y="198" fill="#5f6368" font-size="12">Z</text>
+          <text x="32" y="330" fill="#5f6368" font-size="12">红色半透明面为最小二乘拟合平面</text>
+          <defs>
+            <marker id="surfaceAxis" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 Z" fill="#5f6368"/>
+            </marker>
+          </defs>
+        </svg>
+      `;
+    }
+
+    function renderSurfaceAnalysis(analysis, fileName = "") {
+      const metrics = analysis.metrics;
+      const cards = [
+        ["RMS", metrics.rmsZ0, "um"],
+        ["Rx", metrics.rxUrRad, "urad"],
+        ["Ry", metrics.ryUrRad, "urad"],
+        ["Mean Z", metrics.meanZ, "um"],
+        ["TTV", metrics.ttv, "um"],
+        ["残差RMS", metrics.residualRms, "um"],
+        ["残差PV", metrics.residualPv, "um"],
+        ["剔除点数", analysis.removed, "points"]
+      ];
+      surfaceCards.innerHTML = "";
+      cards.forEach(([title, value, unit]) => {
+        const card = document.createElement("div");
+        card.className = "result-card";
+        card.innerHTML = `<span>${escapeHtml(title)}</span><strong>${formatNumber(value)}</strong><span>${escapeHtml(unit)}</span>`;
+        surfaceCards.append(card);
+      });
+
+      surfaceFileMeta.textContent = `${fileName || "面型数据"} · 原始 ${analysis.rawCount} 点 · 当前 ${analysis.points.length} 点`;
+      surfaceSummary.textContent = `平面 z = ${formatNumber(analysis.plane.a)}x + ${formatNumber(analysis.plane.b)}y + ${formatNumber(analysis.plane.c)}；${analysis.sigmaEnabled ? `3s滤波剔除 ${analysis.removed} 点` : "未启用 3s 滤波"}。`;
+      surfacePlot2d.innerHTML = buildSurface2dSvg(analysis);
+      surfacePlot3d.innerHTML = buildSurface3dSvg(analysis);
+      window.lastSurfaceText = [
+        "面型稳定性分析结果",
+        `文件: ${fileName || "-"}`,
+        `原始点数: ${analysis.rawCount}`,
+        `当前点数: ${analysis.points.length}`,
+        `3-Sigma滤波: ${analysis.sigmaEnabled ? "开启" : "关闭"}`,
+        `剔除点数: ${analysis.removed}`,
+        `平面系数: a=${formatNumber(analysis.plane.a)}, b=${formatNumber(analysis.plane.b)}, c=${formatNumber(analysis.plane.c)}`,
+        `RMS: ${formatNumber(metrics.rmsZ0)} um`,
+        `Rx: ${formatNumber(metrics.rxUrRad)} urad`,
+        `Ry: ${formatNumber(metrics.ryUrRad)} urad`,
+        `Mean Z: ${formatNumber(metrics.meanZ)} um`,
+        `TTV: ${formatNumber(metrics.ttv)} um`,
+        `残差RMS: ${formatNumber(metrics.residualRms)} um`,
+        `残差PV: ${formatNumber(metrics.residualPv)} um`,
+        `残差样本s: ${formatNumber(metrics.residualSigma)} um`
+      ].join("\n");
+    }
+
+    async function handleSurfaceFile(file) {
+      try {
+        surfaceFileMeta.textContent = `${file.name} · 正在读取...`;
+        surfaceCards.innerHTML = "";
+        renderEmptySurfacePlots("正在解析面型数据...");
+        const rows = await parseDataFile(file);
+        const parsed = parseSurfaceRows(rows);
+        const analysis = calculateSurfaceAnalysis(parsed.points, surfaceSigmaToggle.checked);
+        analysis.firstDataRow = parsed.firstDataRow;
+        window.lastSurfaceAnalysis = { rawPoints: parsed.points, fileName: file.name };
+        renderSurfaceAnalysis(analysis, file.name);
+        showToast("面型分析完成");
+      } catch (error) {
+        surfaceFileMeta.textContent = `读取失败：${file.name}`;
+        surfaceSummary.textContent = error.message;
+        surfaceCards.innerHTML = "";
+        renderEmptySurfacePlots(error.message);
+        window.lastSurfaceText = "";
+        window.lastSurfaceAnalysis = null;
+      }
+    }
+
+    function refreshSurfaceAnalysis() {
+      const last = window.lastSurfaceAnalysis;
+      if (!last) return;
+      try {
+        const analysis = calculateSurfaceAnalysis(last.rawPoints, surfaceSigmaToggle.checked);
+        renderSurfaceAnalysis(analysis, last.fileName);
+      } catch (error) {
+        showToast(error.message);
+      }
+    }
+
+    function exportSurfaceReportSvg() {
+      const analysis = window.lastSurfaceAnalysis;
+      if (!analysis || !window.lastSurfaceText) {
+        showToast("暂无面型分析结果");
+        return;
+      }
+      const report = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="920" viewBox="0 0 1280 920">
+          <rect width="1280" height="920" fill="#fff"/>
+          <text x="640" y="54" text-anchor="middle" font-family="Arial, Microsoft YaHei" font-size="30" font-weight="700" fill="#202124">面型稳定性分析报告</text>
+          <foreignObject x="70" y="84" width="1140" height="190">
+            <pre xmlns="http://www.w3.org/1999/xhtml" style="font:16px/1.55 Consolas, Microsoft YaHei, sans-serif; color:#202124; white-space:pre-wrap; margin:0;">${escapeHtml(window.lastSurfaceText)}</pre>
+          </foreignObject>
+          <g transform="translate(20 290)">${surfacePlot2d.querySelector("svg")?.innerHTML || ""}</g>
+          <g transform="translate(640 290)">${surfacePlot3d.querySelector("svg")?.innerHTML || ""}</g>
+        </svg>
+      `;
+      const blob = new Blob([report], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const safeName = (analysis.fileName || "面型分析").replace(/\.[^.]+$/, "").replace(/[\\/:*?"<>|]+/g, "-");
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${safeName}-面型分析报告.svg`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast("SVG报告已下载");
+    }
+
     function renderHertzResult(result) {
       const cards = result.kind === "point"
         ? [
@@ -3712,6 +4164,21 @@
 
     exportDataCsv.addEventListener("click", exportMetricsCsv);
 
+    surfaceFileInput.addEventListener("change", () => {
+      const [file] = surfaceFileInput.files;
+      if (file) {
+        handleSurfaceFile(file);
+      }
+    });
+
+    surfaceSigmaToggle.addEventListener("change", refreshSurfaceAnalysis);
+
+    copySurfaceStats.addEventListener("click", () => {
+      copyText(window.lastSurfaceText || "暂无面型分析结果");
+    });
+
+    exportSurfaceSvg.addEventListener("click", exportSurfaceReportSvg);
+
     document.querySelector("#calculateStiffness").addEventListener("click", () => {
       if (runStiffnessCalculation()) {
         showToast("刚度计算完成");
@@ -3766,6 +4233,7 @@
     loadAvatarImage();
     updateConversion();
     renderEmptyDataChart();
+    renderEmptySurfacePlots();
     updateHertzModelUi(false);
     runHertzCalculation();
     runStiffnessCalculation();
