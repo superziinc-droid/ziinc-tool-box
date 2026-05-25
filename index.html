@@ -1549,11 +1549,13 @@
         units: {
           pa: { label: "帕 Pa", factor: 1 },
           kpa: { label: "千帕 kPa", factor: 1000 },
+          mpa: { label: "兆帕 MPa", factor: 1000000 },
+          gpa: { label: "吉帕 GPa", factor: 1000000000 },
           bar: { label: "巴 bar", factor: 100000 },
           atm: { label: "标准大气压 atm", factor: 101325 },
           psi: { label: "磅/平方英寸 psi", factor: 6894.757293168 }
         },
-        quick: [["atm", "kpa", 1], ["bar", "psi", 1], ["kpa", "psi", 100]]
+        quick: [["mpa", "kpa", 1], ["gpa", "mpa", 1], ["bar", "psi", 1]]
       }
     };
 
