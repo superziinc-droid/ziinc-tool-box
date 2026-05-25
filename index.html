@@ -1319,6 +1319,7 @@
             <h2>面型分析</h2>
             <div class="utility-actions">
               <button class="text-button" type="button" id="copySurfaceStats">复制结果</button>
+              <button class="text-button" type="button" id="exportSurfaceCsv">下载CSV</button>
               <button class="text-button" type="button" id="exportSurfaceSvg">下载SVG报告</button>
             </div>
           </div>
@@ -1328,7 +1329,7 @@
               <div class="upload-box">
                 <label for="surfaceFileInput">上传 CSV / Excel 面型数据</label>
                 <input id="surfaceFileInput" type="file" accept=".xlsx,.xls,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv">
-                <div class="data-meta" id="surfaceFileMeta">默认读取前 5 列：x、y、z1、z2、timestamp；计算 z = z1 + z2。</div>
+                <div class="data-meta" id="surfaceFileMeta">优先识别表头 x、y、z1、z2、timestamp；没有表头时读取前 5 列，计算 z = z1 + z2。</div>
               </div>
 
               <div class="input-section">
@@ -1337,7 +1338,7 @@
                   <span>3-Sigma 残差滤波</span>
                   <input id="surfaceSigmaToggle" type="checkbox" checked>
                 </label>
-                <div class="data-meta">先拟合平面并按残差样本标准差剔除超 3s 点，再重新拟合并计算指标。</div>
+                <div class="data-meta">先拟合平面并按残差样本标准差进行迭代 3s 滤波，再重新拟合并计算指标；2D 图默认按残差着色。</div>
               </div>
             </div>
 
@@ -1632,6 +1633,7 @@
     const surfacePlot2d = document.querySelector("#surfacePlot2d");
     const surfacePlot3d = document.querySelector("#surfacePlot3d");
     const copySurfaceStats = document.querySelector("#copySurfaceStats");
+    const exportSurfaceCsv = document.querySelector("#exportSurfaceCsv");
     const exportSurfaceSvg = document.querySelector("#exportSurfaceSvg");
     const pageLayout = document.querySelector(".layout");
     const mainStack = document.querySelector(".main-stack");
@@ -3119,19 +3121,36 @@
       surfacePlot3d.innerHTML = empty;
     }
 
+    function surfaceColumnMap(rows) {
+      const names = rows[0]?.map((item) => String(item ?? "").trim().toLowerCase()) || [];
+      const findName = (patterns) => names.findIndex((name) => patterns.some((pattern) => pattern.test(name)));
+      const mapped = {
+        x: findName([/^x$/, /^x[_\s-]?pos/, /x坐标/, /x位置/]),
+        y: findName([/^y$/, /^y[_\s-]?pos/, /y坐标/, /y位置/]),
+        z1: findName([/^z1$/, /^z[_\s-]?1$/, /z1高度/, /高度1/]),
+        z2: findName([/^z2$/, /^z[_\s-]?2$/, /z2高度/, /高度2/]),
+        time: findName([/^time$/, /^timestamp$/, /时间/, /日期/])
+      };
+      if ([mapped.x, mapped.y, mapped.z1, mapped.z2].every((index) => index >= 0)) {
+        return { ...mapped, hasHeader: true };
+      }
+      return { x: 0, y: 1, z1: 2, z2: 3, time: 4, hasHeader: false };
+    }
+
     function parseSurfaceRows(rows) {
       if (rows.length < 3) throw new Error("面型数据至少需要 3 个有效点。");
+      const columns = surfaceColumnMap(rows);
       let firstDataRow = rows.findIndex((row) => {
-        return [0, 1, 2, 3].every((index) => parseValue(row[index]) !== null);
+        return [columns.x, columns.y, columns.z1, columns.z2].every((index) => parseValue(row[index]) !== null);
       });
       if (firstDataRow < 0) throw new Error("未找到 x、y、z1、z2 数字列。");
 
       const points = [];
       rows.slice(firstDataRow).forEach((row, offset) => {
-        const x = parseValue(row[0]);
-        const y = parseValue(row[1]);
-        const z1 = parseValue(row[2]);
-        const z2 = parseValue(row[3]);
+        const x = parseValue(row[columns.x]);
+        const y = parseValue(row[columns.y]);
+        const z1 = parseValue(row[columns.z1]);
+        const z2 = parseValue(row[columns.z2]);
         if ([x, y, z1, z2].some((value) => value === null)) return;
         points.push({
           x,
@@ -3139,13 +3158,13 @@
           z1,
           z2,
           z: z1 + z2,
-          time: excelSerialToDate(row[4] ?? points.length + 1),
+          time: excelSerialToDate(row[columns.time] ?? points.length + 1),
           rowNumber: firstDataRow + offset + 1
         });
       });
 
       if (points.length < 3) throw new Error("有效面型点少于 3 个，无法拟合平面。");
-      return { points, firstDataRow: firstDataRow + 1 };
+      return { points, firstDataRow: firstDataRow + 1, columns };
     }
 
     function solve3x3(matrix, vector) {
@@ -3169,14 +3188,18 @@
     }
 
     function fitSurfacePlane(points) {
+      const xCenter = points.reduce((sum, point) => sum + point.x, 0) / points.length;
+      const yCenter = points.reduce((sum, point) => sum + point.y, 0) / points.length;
       const sums = points.reduce((acc, point) => {
-        acc.xx += point.x * point.x;
-        acc.xy += point.x * point.y;
-        acc.x += point.x;
-        acc.yy += point.y * point.y;
-        acc.y += point.y;
-        acc.xz += point.x * point.z;
-        acc.yz += point.y * point.z;
+        const dx = point.x - xCenter;
+        const dy = point.y - yCenter;
+        acc.xx += dx * dx;
+        acc.xy += dx * dy;
+        acc.x += dx;
+        acc.yy += dy * dy;
+        acc.y += dy;
+        acc.xz += dx * point.z;
+        acc.yz += dy * point.z;
         acc.z += point.z;
         return acc;
       }, { xx: 0, xy: 0, x: 0, yy: 0, y: 0, xz: 0, yz: 0, z: 0 });
@@ -3186,8 +3209,9 @@
         [sums.xy, sums.yy, sums.y],
         [sums.x, sums.y, points.length]
       ];
-      const [a, b, c] = solve3x3(matrix, [sums.xz, sums.yz, sums.z]);
-      return { a, b, c };
+      const [a, b, centeredC] = solve3x3(matrix, [sums.xz, sums.yz, sums.z]);
+      const c = centeredC - a * xCenter - b * yCenter;
+      return { a, b, c, centeredC, xCenter, yCenter };
     }
 
     function surfaceResiduals(points, plane) {
@@ -3202,13 +3226,20 @@
 
     function applySurfaceSigma(points) {
       if (points.length < 3) return { points: [...points], removed: 0 };
-      const plane = fitSurfacePlane(points);
-      const residuals = surfaceResiduals(points, plane);
-      const mean = residuals.reduce((sum, value) => sum + value, 0) / residuals.length;
-      const sigma = sampleStd(residuals);
-      if (sigma <= 1e-12) return { points: [...points], removed: 0 };
-      const filtered = points.filter((_, index) => Math.abs(residuals[index] - mean) <= 3 * sigma);
-      return { points: filtered, removed: points.length - filtered.length };
+      let current = [...points];
+      let iterations = 0;
+      for (let pass = 0; pass < 5; pass += 1) {
+        const plane = fitSurfacePlane(current);
+        const residuals = surfaceResiduals(current, plane);
+        const mean = residuals.reduce((sum, value) => sum + value, 0) / residuals.length;
+        const sigma = sampleStd(residuals);
+        if (sigma <= 1e-12) break;
+        const filtered = current.filter((_, index) => Math.abs(residuals[index] - mean) <= 3 * sigma);
+        if (filtered.length === current.length || filtered.length < 3) break;
+        current = filtered;
+        iterations += 1;
+      }
+      return { points: current, removed: points.length - current.length, iterations };
     }
 
     function calculateSurfaceAnalysis(rawPoints, sigmaEnabled) {
@@ -3216,16 +3247,19 @@
       if (filtered.points.length < 3) throw new Error("3-Sigma 滤波后有效点少于 3 个，无法拟合。");
       const plane = fitSurfacePlane(filtered.points);
       const residuals = surfaceResiduals(filtered.points, plane);
-      const zValues = filtered.points.map((point) => point.z);
+      const pointsWithResidual = filtered.points.map((point, index) => ({ ...point, residual: residuals[index] }));
+      const zValues = pointsWithResidual.map((point) => point.z);
       const residualMean = residuals.reduce((sum, value) => sum + value, 0) / residuals.length;
       const residualRms = Math.sqrt(residuals.reduce((sum, value) => sum + value ** 2, 0) / residuals.length);
       const meanZ = zValues.reduce((sum, value) => sum + value, 0) / zValues.length;
       const maxZ = Math.max(...zValues);
       const minZ = Math.min(...zValues);
+      const residualSigma = sampleStd(residuals);
       return {
         rawCount: rawPoints.length,
-        points: filtered.points,
+        points: pointsWithResidual,
         removed: filtered.removed,
+        iterations: filtered.iterations || 0,
         sigmaEnabled,
         plane,
         residuals,
@@ -3238,7 +3272,9 @@
           residualMean,
           residualRms,
           residualPv: Math.max(...residuals) - Math.min(...residuals),
-          residualSigma: sampleStd(residuals)
+          residualSigma,
+          residualThreeSigma: residualSigma * 3,
+          flatnessPv: Math.max(...residuals) - Math.min(...residuals)
         }
       };
     }
@@ -3273,7 +3309,7 @@
       const points = analysis.points;
       const xb = bounds(points.map((point) => point.x / 1000));
       const yb = bounds(points.map((point) => point.y / 1000));
-      const zb = bounds(points.map((point) => point.z));
+      const rb = bounds(points.map((point) => point.residual));
       const plotW = width - left - right;
       const plotH = height - top - bottom;
       const x = (value) => left + ((value / 1000 - xb.min) / (xb.max - xb.min)) * plotW;
@@ -3286,16 +3322,16 @@
         <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="2D 面型点云图">
           <rect width="${width}" height="${height}" fill="#fff"/>
           <text x="${left}" y="28" fill="#202124" font-size="18" font-weight="700">2D 面型点云图</text>
-          <text x="${width - right - 140}" y="28" fill="#5f6368" font-size="12">${analysis.sigmaEnabled ? "已滤波" : "原始数据"}</text>
+          <text x="${width - right - 168}" y="28" fill="#5f6368" font-size="12">颜色=残差 ${analysis.sigmaEnabled ? "已滤波" : "原始"}</text>
           <rect x="${left}" y="${top}" width="${plotW}" height="${plotH}" fill="#f8fafd" stroke="#dadce0"/>
           ${visible.map((point) => `
-            <circle cx="${x(point.x)}" cy="${y(point.y)}" r="3.2" fill="${colorRamp(point.z, zb.min, zb.max)}" opacity=".88"/>
+            <circle cx="${x(point.x)}" cy="${y(point.y)}" r="3.2" fill="${colorRamp(point.residual, rb.min, rb.max)}" opacity=".88"/>
           `).join("")}
           <line x1="${left}" y1="${height - bottom}" x2="${width - right}" y2="${height - bottom}" stroke="#5f6368"/>
           <line x1="${left}" y1="${top}" x2="${left}" y2="${height - bottom}" stroke="#5f6368"/>
           <text x="${left + plotW / 2}" y="${height - 15}" text-anchor="middle" fill="#5f6368" font-size="12">X (mm)</text>
           <text x="18" y="${top + plotH / 2}" text-anchor="middle" fill="#5f6368" font-size="12" transform="rotate(-90 18 ${top + plotH / 2})">Y (mm)</text>
-          <text x="${width - right + 14}" y="${top + 10}" fill="#5f6368" font-size="12">Z</text>
+          <text x="${width - right + 14}" y="${top + 10}" fill="#5f6368" font-size="12">残差</text>
           <rect x="${width - right + 14}" y="${top + 26}" width="14" height="${plotH - 52}" fill="url(#surfaceGrad)"/>
           <defs>
             <linearGradient id="surfaceGrad" x1="0" x2="0" y1="1" y2="0">
@@ -3304,8 +3340,8 @@
               <stop offset="100%" stop-color="#ffbc04"/>
             </linearGradient>
           </defs>
-          <text x="${width - right + 34}" y="${top + 38}" fill="#5f6368" font-size="11">${formatNumber(zb.max)}</text>
-          <text x="${width - right + 34}" y="${top + plotH - 20}" fill="#5f6368" font-size="11">${formatNumber(zb.min)}</text>
+          <text x="${width - right + 34}" y="${top + 38}" fill="#5f6368" font-size="11">${formatNumber(rb.max)}</text>
+          <text x="${width - right + 34}" y="${top + plotH - 20}" fill="#5f6368" font-size="11">${formatNumber(rb.min)}</text>
         </svg>
       `;
     }
@@ -3375,8 +3411,9 @@
         ["Ry", metrics.ryUrRad, "urad"],
         ["Mean Z", metrics.meanZ, "um"],
         ["TTV", metrics.ttv, "um"],
+        ["平面度PV", metrics.flatnessPv, "um"],
         ["残差RMS", metrics.residualRms, "um"],
-        ["残差PV", metrics.residualPv, "um"],
+        ["残差3s", metrics.residualThreeSigma, "um"],
         ["剔除点数", analysis.removed, "points"]
       ];
       surfaceCards.innerHTML = "";
@@ -3388,7 +3425,7 @@
       });
 
       surfaceFileMeta.textContent = `${fileName || "面型数据"} · 原始 ${analysis.rawCount} 点 · 当前 ${analysis.points.length} 点`;
-      surfaceSummary.textContent = `平面 z = ${formatNumber(analysis.plane.a)}x + ${formatNumber(analysis.plane.b)}y + ${formatNumber(analysis.plane.c)}；${analysis.sigmaEnabled ? `3s滤波剔除 ${analysis.removed} 点` : "未启用 3s 滤波"}。`;
+      surfaceSummary.textContent = `平面 z = ${formatNumber(analysis.plane.a)}x + ${formatNumber(analysis.plane.b)}y + ${formatNumber(analysis.plane.c)}；${analysis.sigmaEnabled ? `迭代3s滤波 ${analysis.iterations} 轮，剔除 ${analysis.removed} 点` : "未启用 3s 滤波"}。`;
       surfacePlot2d.innerHTML = buildSurface2dSvg(analysis);
       surfacePlot3d.innerHTML = buildSurface3dSvg(analysis);
       window.lastSurfaceText = [
@@ -3397,6 +3434,7 @@
         `原始点数: ${analysis.rawCount}`,
         `当前点数: ${analysis.points.length}`,
         `3-Sigma滤波: ${analysis.sigmaEnabled ? "开启" : "关闭"}`,
+        `滤波迭代: ${analysis.iterations}`,
         `剔除点数: ${analysis.removed}`,
         `平面系数: a=${formatNumber(analysis.plane.a)}, b=${formatNumber(analysis.plane.b)}, c=${formatNumber(analysis.plane.c)}`,
         `RMS: ${formatNumber(metrics.rmsZ0)} um`,
@@ -3404,8 +3442,10 @@
         `Ry: ${formatNumber(metrics.ryUrRad)} urad`,
         `Mean Z: ${formatNumber(metrics.meanZ)} um`,
         `TTV: ${formatNumber(metrics.ttv)} um`,
+        `平面度PV: ${formatNumber(metrics.flatnessPv)} um`,
         `残差RMS: ${formatNumber(metrics.residualRms)} um`,
         `残差PV: ${formatNumber(metrics.residualPv)} um`,
+        `残差3s: ${formatNumber(metrics.residualThreeSigma)} um`,
         `残差样本s: ${formatNumber(metrics.residualSigma)} um`
       ].join("\n");
     }
@@ -3419,7 +3459,8 @@
         const parsed = parseSurfaceRows(rows);
         const analysis = calculateSurfaceAnalysis(parsed.points, surfaceSigmaToggle.checked);
         analysis.firstDataRow = parsed.firstDataRow;
-        window.lastSurfaceAnalysis = { rawPoints: parsed.points, fileName: file.name };
+        analysis.columns = parsed.columns;
+        window.lastSurfaceAnalysis = { rawPoints: parsed.points, fileName: file.name, current: analysis };
         renderSurfaceAnalysis(analysis, file.name);
         showToast("面型分析完成");
       } catch (error) {
@@ -3437,6 +3478,8 @@
       if (!last) return;
       try {
         const analysis = calculateSurfaceAnalysis(last.rawPoints, surfaceSigmaToggle.checked);
+        analysis.columns = last.current?.columns;
+        last.current = analysis;
         renderSurfaceAnalysis(analysis, last.fileName);
       } catch (error) {
         showToast(error.message);
@@ -3471,6 +3514,51 @@
       link.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
       showToast("SVG报告已下载");
+    }
+
+    function exportSurfaceCsvFile() {
+      const last = window.lastSurfaceAnalysis;
+      const analysis = last?.current;
+      if (!analysis) {
+        showToast("暂无面型分析结果");
+        return;
+      }
+
+      const metricRows = [
+        ["metric", "value", "unit"],
+        ["raw_count", analysis.rawCount, "points"],
+        ["current_count", analysis.points.length, "points"],
+        ["removed", analysis.removed, "points"],
+        ["filter_iterations", analysis.iterations, "-"],
+        ["plane_a", analysis.plane.a, "um/input_x"],
+        ["plane_b", analysis.plane.b, "um/input_y"],
+        ["plane_c", analysis.plane.c, "um"],
+        ["RMS_Z0", analysis.metrics.rmsZ0, "um"],
+        ["Rx", analysis.metrics.rxUrRad, "urad"],
+        ["Ry", analysis.metrics.ryUrRad, "urad"],
+        ["Mean_Z", analysis.metrics.meanZ, "um"],
+        ["TTV", analysis.metrics.ttv, "um"],
+        ["Flatness_PV", analysis.metrics.flatnessPv, "um"],
+        ["Residual_RMS", analysis.metrics.residualRms, "um"],
+        ["Residual_3s", analysis.metrics.residualThreeSigma, "um"]
+      ];
+      const pointRows = [
+        [],
+        ["row", "time", "x", "y", "z1", "z2", "z", "residual"],
+        ...analysis.points.map((point) => [point.rowNumber, point.time, point.x, point.y, point.z1, point.z2, point.z, point.residual])
+      ];
+      const csv = [...metricRows, ...pointRows].map((row) => row.map(csvCell).join(",")).join("\n");
+      const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const safeName = (last.fileName || "面型分析").replace(/\.[^.]+$/, "").replace(/[\\/:*?"<>|]+/g, "-");
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${safeName}-面型分析数据.csv`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast("面型CSV已下载");
     }
 
     function renderHertzResult(result) {
@@ -4176,6 +4264,8 @@
     copySurfaceStats.addEventListener("click", () => {
       copyText(window.lastSurfaceText || "暂无面型分析结果");
     });
+
+    exportSurfaceCsv.addEventListener("click", exportSurfaceCsvFile);
 
     exportSurfaceSvg.addEventListener("click", exportSurfaceReportSvg);
 

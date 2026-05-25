@@ -10,7 +10,7 @@
 - Hertz 接触计算
 - 球-V槽刚度计算
 - 稳定性计算：读取 Excel / CSV 数据并计算最大值、最小值、PV、平均值、3sigma
-- 面型分析：读取 x、y、z1、z2、timestamp 点云数据，进行 3-Sigma 残差滤波、平面拟合、RMS、Rx、Ry、TTV 和 2D/3D 可视化
+- 面型分析：读取 x、y、z1、z2、timestamp 点云数据，自动识别表头，进行迭代 3-Sigma 残差滤波、中心化平面拟合、RMS、Rx、Ry、TTV、平面度 PV 和 2D/3D 可视化
 
 ## GitHub Pages
 
