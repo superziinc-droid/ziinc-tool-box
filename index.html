@@ -705,6 +705,62 @@
       background: rgba(217, 48, 37, .08);
     }
 
+    .strength-summary {
+      display: grid;
+      gap: 10px;
+    }
+
+    .summary-line {
+      color: var(--muted);
+    }
+
+    .strength-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .strength-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #f8fafd;
+    }
+
+    .strength-card strong,
+    .strength-card span {
+      display: block;
+    }
+
+    .strength-card strong {
+      color: var(--ink);
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .strength-state {
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .strength-state.ok {
+      color: var(--green);
+    }
+
+    .strength-state.warn {
+      color: var(--red);
+    }
+
+    .strength-state.unchecked {
+      color: var(--muted);
+    }
+
+    .strength-meta {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
     .matrix-wrap {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -996,6 +1052,7 @@
       .note-grid,
       .stiffness-grid,
       .result-cards,
+      .strength-grid,
       .surface-plot-grid {
         grid-template-columns: 1fr;
       }
@@ -1199,12 +1256,18 @@
                 <h3>接触体1材料</h3>
                 <label class="calc-field">弹性模量 <input data-hertz="e1" value="206" inputmode="decimal"><span class="calc-unit">GPa</span></label>
                 <label class="calc-field">泊松比 <input data-hertz="nu1" value="0.30" inputmode="decimal"><span class="calc-unit">-</span></label>
+                <label class="calc-field">屈服强度 <input data-hertz="yield1" value="1500" inputmode="decimal"><span class="calc-unit">MPa</span></label>
+                <label class="calc-field">断裂/极限强度 <input data-hertz="ultimate1" value="3000" inputmode="decimal"><span class="calc-unit">MPa</span></label>
+                <label class="calc-field">硬度 <input data-hertz="hardness1" value="700" inputmode="decimal"><span class="calc-unit">HV</span></label>
               </div>
 
               <div class="input-section">
                 <h3>接触体2材料</h3>
                 <label class="calc-field">弹性模量 <input data-hertz="e2" value="206" inputmode="decimal"><span class="calc-unit">GPa</span></label>
                 <label class="calc-field">泊松比 <input data-hertz="nu2" value="0.30" inputmode="decimal"><span class="calc-unit">-</span></label>
+                <label class="calc-field">屈服强度 <input data-hertz="yield2" value="1500" inputmode="decimal"><span class="calc-unit">MPa</span></label>
+                <label class="calc-field">断裂/极限强度 <input data-hertz="ultimate2" value="3000" inputmode="decimal"><span class="calc-unit">MPa</span></label>
+                <label class="calc-field">硬度 <input data-hertz="hardness2" value="700" inputmode="decimal"><span class="calc-unit">HV</span></label>
               </div>
 
               <div class="stiffness-actions">
@@ -2175,16 +2238,25 @@
         lengthM: hertzNumber("length", "接触长度") * 1e-3,
         e1Pa: hertzNumber("e1", "接触体1弹性模量") * 1e9,
         nu1: hertzNumber("nu1", "接触体1泊松比"),
+        yield1Pa: hertzNumber("yield1", "接触体1屈服强度") * 1e6,
+        ultimate1Pa: hertzNumber("ultimate1", "接触体1断裂/极限强度") * 1e6,
+        hardness1Pa: hertzNumber("hardness1", "接触体1硬度") * 9.80665e6,
         e2Pa: hertzNumber("e2", "接触体2弹性模量") * 1e9,
-        nu2: hertzNumber("nu2", "接触体2泊松比")
+        nu2: hertzNumber("nu2", "接触体2泊松比"),
+        yield2Pa: hertzNumber("yield2", "接触体2屈服强度") * 1e6,
+        ultimate2Pa: hertzNumber("ultimate2", "接触体2断裂/极限强度") * 1e6,
+        hardness2Pa: hertzNumber("hardness2", "接触体2硬度") * 9.80665e6
       };
     }
 
-    function validateHertzMaterial(name, elasticModulusPa, poissonRatio) {
+    function validateHertzMaterial(name, elasticModulusPa, poissonRatio, yieldStrengthPa, ultimateStrengthPa, hardnessPa) {
       if (elasticModulusPa <= 0) throw new Error(`${name}弹性模量必须大于 0。`);
       if (!(poissonRatio > -1 && poissonRatio < 0.5)) {
         throw new Error(`${name}泊松比应在 -1 到 0.5 之间。`);
       }
+      if (yieldStrengthPa < 0) throw new Error(`${name}屈服强度不能小于 0。`);
+      if (ultimateStrengthPa < 0) throw new Error(`${name}断裂/极限强度不能小于 0。`);
+      if (hardnessPa < 0) throw new Error(`${name}硬度不能小于 0。`);
     }
 
     function equivalentHertzModulus(data) {
@@ -2192,6 +2264,39 @@
         (1 - data.nu1 ** 2) / data.e1Pa +
         (1 - data.nu2 ** 2) / data.e2Pa
       );
+    }
+
+    function evaluateHertzStrengthForBody(name, maxPressurePa, yieldStrengthPa, ultimateStrengthPa, hardnessPa) {
+      const plasticCandidates = [];
+      if (yieldStrengthPa > 0) plasticCandidates.push({ label: "1.6×屈服强度", value: 1.6 * yieldStrengthPa });
+      if (hardnessPa > 0) plasticCandidates.push({ label: "硬度HV折算", value: hardnessPa });
+      const plasticLimit = plasticCandidates.length
+        ? plasticCandidates.reduce((lowest, item) => item.value < lowest.value ? item : lowest, plasticCandidates[0])
+        : null;
+      const plasticFactor = plasticLimit ? plasticLimit.value / maxPressurePa : null;
+      const fractureFactor = ultimateStrengthPa > 0 ? ultimateStrengthPa / maxPressurePa : null;
+
+      return {
+        name,
+        plasticLimit,
+        plasticFactor,
+        plasticState: plasticLimit ? (plasticFactor >= 1 ? "ok" : "warn") : "unchecked",
+        fractureLimitPa: ultimateStrengthPa > 0 ? ultimateStrengthPa : null,
+        fractureFactor,
+        fractureState: ultimateStrengthPa > 0 ? (fractureFactor >= 1 ? "ok" : "warn") : "unchecked"
+      };
+    }
+
+    function evaluateHertzStrength(data, result) {
+      return [
+        evaluateHertzStrengthForBody("接触体1", result.maxPressurePa, data.yield1Pa, data.ultimate1Pa, data.hardness1Pa),
+        evaluateHertzStrengthForBody("接触体2", result.maxPressurePa, data.yield2Pa, data.ultimate2Pa, data.hardness2Pa)
+      ];
+    }
+
+    function attachHertzStrength(data, result) {
+      result.strength = evaluateHertzStrength(data, result);
+      return result;
     }
 
     function calculatePointHertz(data, equivalentRadiusM, modelName) {
@@ -2250,32 +2355,29 @@
     }
 
     function calculateHertzContact(data) {
-      validateHertzMaterial("接触体1", data.e1Pa, data.nu1);
-      validateHertzMaterial("接触体2", data.e2Pa, data.nu2);
+      validateHertzMaterial("接触体1", data.e1Pa, data.nu1, data.yield1Pa, data.ultimate1Pa, data.hardness1Pa);
+      validateHertzMaterial("接触体2", data.e2Pa, data.nu2, data.yield2Pa, data.ultimate2Pa, data.hardness2Pa);
       if (data.loadN <= 0) throw new Error("法向载荷必须大于 0。");
       if (data.radius1M < 0 || data.radius2M < 0) throw new Error("曲率半径不能小于 0；平面请填 0。");
+      let result;
 
       if (data.model === "sphereSphere") {
         if (data.radius1M <= 0 || data.radius2M <= 0) throw new Error("球-球接触需要两个球半径都大于 0。");
-        return calculatePointHertz(data, 1 / (1 / data.radius1M + 1 / data.radius2M), "球-球接触");
-      }
-
-      if (data.model === "spherePlane") {
+        result = calculatePointHertz(data, 1 / (1 / data.radius1M + 1 / data.radius2M), "球-球接触");
+      } else if (data.model === "spherePlane") {
         if (data.radius1M <= 0) throw new Error("球-平面接触需要球半径大于 0。");
-        return calculatePointHertz(data, data.radius1M, "球-平面接触");
-      }
-
-      if (data.model === "crossedCylindersEqual") {
+        result = calculatePointHertz(data, data.radius1M, "球-平面接触");
+      } else if (data.model === "crossedCylindersEqual") {
         if (data.radius1M <= 0) throw new Error("等半径圆柱交叉接触需要圆柱半径大于 0。");
-        return calculatePointHertz(data, data.radius1M, "等半径圆柱 90° 交叉接触");
-      }
-
-      if (data.model === "parallelCylinders") {
+        result = calculatePointHertz(data, data.radius1M, "等半径圆柱 90° 交叉接触");
+      } else if (data.model === "parallelCylinders") {
         if (data.radius1M <= 0 || data.radius2M <= 0) throw new Error("平行圆柱接触需要两个圆柱半径都大于 0。");
-        return calculateLineHertz(data, 1 / (1 / data.radius1M + 1 / data.radius2M), "平行圆柱线接触");
+        result = calculateLineHertz(data, 1 / (1 / data.radius1M + 1 / data.radius2M), "平行圆柱线接触");
+      } else {
+        throw new Error("请选择有效的赫兹接触模型。");
       }
 
-      throw new Error("请选择有效的赫兹接触模型。");
+      return attachHertzStrength(data, result);
     }
 
     function hertzInputLabel(result) {
@@ -2323,6 +2425,67 @@
         `δ ${formatNumber(result.indentationM * 1e6)} um`,
         ...common
       ];
+    }
+
+    function strengthStateText(state, okText, warnText) {
+      if (state === "ok") return okText;
+      if (state === "warn") return warnText;
+      return "未校核";
+    }
+
+    function strengthFactorText(value) {
+      return value === null ? "未输入" : formatNumber(value);
+    }
+
+    function hertzStrengthCardHtml(check) {
+      const plasticText = strengthStateText(check.plasticState, "未发生塑性变形", "可能发生塑性变形");
+      const fractureText = strengthStateText(check.fractureState, "未发生断裂", "存在断裂风险");
+      const plasticLimit = check.plasticLimit
+        ? `${formatNumber(check.plasticLimit.value / 1e6)} MPa（${check.plasticLimit.label}）`
+        : "未输入";
+      const fractureLimit = check.fractureLimitPa ? `${formatNumber(check.fractureLimitPa / 1e6)} MPa` : "未输入";
+
+      return `
+        <div class="strength-card">
+          <strong>${escapeHtml(check.name)}</strong>
+          <span class="strength-state ${check.plasticState}">塑性：${escapeHtml(plasticText)}</span>
+          <span class="strength-meta">许用接触压力 ${escapeHtml(plasticLimit)}；安全系数 ${escapeHtml(strengthFactorText(check.plasticFactor))}</span>
+          <span class="strength-state ${check.fractureState}">断裂：${escapeHtml(fractureText)}</span>
+          <span class="strength-meta">极限/断裂强度 ${escapeHtml(fractureLimit)}；安全系数 ${escapeHtml(strengthFactorText(check.fractureFactor))}</span>
+        </div>
+      `;
+    }
+
+    function buildHertzSummary(result) {
+      return `
+        <div class="strength-summary">
+          <div class="summary-line">
+            模型：${escapeHtml(result.modelName)}。p0 = ${escapeHtml(formatNumber(result.maxPressurePa / 1e6))} MPa，k = ${escapeHtml(formatNumber(result.normalStiffnessNPerM * 1e-3))} N/mm
+          </div>
+          <div class="strength-grid">
+            ${result.strength.map(hertzStrengthCardHtml).join("")}
+          </div>
+          <div class="summary-line">
+            校核说明：塑性按 p0 ≤ min(1.6×屈服强度, HV硬度折算压力) 判断；断裂按 p0 ≤ 极限/断裂强度作简化保守校核。
+          </div>
+        </div>
+      `;
+    }
+
+    function hertzStrengthText(result) {
+      return result.strength.map((check) => {
+        const plasticText = strengthStateText(check.plasticState, "未发生塑性变形", "可能发生塑性变形");
+        const fractureText = strengthStateText(check.fractureState, "未发生断裂", "存在断裂风险");
+        const plasticLimit = check.plasticLimit
+          ? `${formatNumber(check.plasticLimit.value / 1e6)} MPa (${check.plasticLimit.label})`
+          : "未输入";
+        const fractureLimit = check.fractureLimitPa ? `${formatNumber(check.fractureLimitPa / 1e6)} MPa` : "未输入";
+        return [
+          `${check.name}强度校核`,
+          `塑性: ${plasticText}; 许用接触压力: ${plasticLimit}; 安全系数: ${strengthFactorText(check.plasticFactor)}`,
+          `断裂: ${fractureText}; 极限/断裂强度: ${fractureLimit}; 安全系数: ${strengthFactorText(check.fractureFactor)}`
+        ].join("\n");
+      }).join("\n");
     }
 
     function svgTextLines(lines, x, y, color = "#202124") {
@@ -2477,7 +2640,9 @@
           `压入量 δ: ${formatNumber(result.indentationM * 1e6)} um`,
           `平均接触压力 pm: ${formatNumber(result.meanPressurePa / 1e6)} MPa`,
           `最大赫兹压力 p0: ${formatNumber(result.maxPressurePa / 1e6)} MPa`,
-          `法向接触刚度 k=dF/dδ: ${formatNumber(result.normalStiffnessNPerM)} N/m = ${formatNumber(result.normalStiffnessNPerM * 1e-3)} N/mm`
+          `法向接触刚度 k=dF/dδ: ${formatNumber(result.normalStiffnessNPerM)} N/m = ${formatNumber(result.normalStiffnessNPerM * 1e-3)} N/mm`,
+          "",
+          hertzStrengthText(result)
         ].join("\n");
       }
 
@@ -2493,7 +2658,9 @@
         `接触宽度 2b: ${formatNumber(result.contactWidthM * 1000)} mm`,
         `平均接触压力 pm: ${formatNumber(result.meanPressurePa / 1e6)} MPa`,
         `最大赫兹压力 p0: ${formatNumber(result.maxPressurePa / 1e6)} MPa`,
-        `法向接触刚度估算 k: ${formatNumber(result.normalStiffnessNPerM)} N/m = ${formatNumber(result.normalStiffnessNPerM * 1e-3)} N/mm`
+        `法向接触刚度估算 k: ${formatNumber(result.normalStiffnessNPerM)} N/m = ${formatNumber(result.normalStiffnessNPerM * 1e-3)} N/mm`,
+        "",
+        hertzStrengthText(result)
       ].join("\n");
     }
 
@@ -3594,7 +3761,7 @@
         hertzCards.append(card);
       });
 
-      hertzSummary.textContent = `模型：${result.modelName}。p0 = ${formatNumber(result.maxPressurePa / 1e6)} MPa，k = ${formatNumber(result.normalStiffnessNPerM * 1e-3)} N/mm`;
+      hertzSummary.innerHTML = buildHertzSummary(result);
       hertzDetail.innerHTML = buildHertzDiagram(result);
       window.lastHertzText = buildHertzText(result);
     }
