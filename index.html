@@ -1068,6 +1068,46 @@
       padding: 10px 12px;
     }
 
+    .reference-link-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 18px;
+      background: #fff;
+      color: inherit;
+      text-decoration: none;
+      transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+
+    .reference-link-card:hover {
+      border-color: #c7d7fb;
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+    }
+
+    .reference-link-card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+
+    .reference-link-card span {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .reference-link-card .link-arrow {
+      color: var(--blue);
+      font-size: 22px;
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+
     .quick-notes.is-editing [data-note-key] {
       border-radius: 6px;
       outline: 1px solid #c7d7fb;
@@ -1690,6 +1730,14 @@
 - 个人网站 / GitHub / 作品集
             </div>
           </section>
+
+          <a class="reference-link-card" href="https://www.pressure-drop.online/" target="_blank" rel="noopener" aria-label="打开 Pressure-Drop.online">
+            <div>
+              <strong>Pressure-Drop.online</strong>
+              <span>管道压降与管道元件阻力计算参考网站。</span>
+            </div>
+            <span class="link-arrow" aria-hidden="true">→</span>
+          </a>
         </section>
       </div>
     </section>
