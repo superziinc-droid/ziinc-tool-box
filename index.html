@@ -1413,6 +1413,22 @@
                 <label class="calc-field">出口温度 <input data-pipe="outletTemp" value="20" inputmode="decimal"><span class="calc-unit">°C</span></label>
                 <p class="model-note">标准体积流量按理想气体换算到管内平均温度和入口绝压；液体或体积/质量流量可忽略此区。</p>
               </div>
+
+              <div class="input-section">
+                <h3>内径反推</h3>
+                <label class="calc-field">
+                  <span>目标总压降</span>
+                  <input data-pipe="targetDrop" value="0.10" inputmode="decimal">
+                  <select data-pipe="targetDropUnit" aria-label="目标压降单位">
+                    <option value="bar">bar</option>
+                    <option value="kPa">kPa</option>
+                    <option value="Pa">Pa</option>
+                    <option value="MPa">MPa</option>
+                  </select>
+                </label>
+                <button class="text-button" type="button" id="solvePipeDiameter">反推内径</button>
+                <p class="model-note" id="pipeDiameterSolveStatus">按当前流量、物性和管道元件参数，求使总压降接近目标值的管径 D。</p>
+              </div>
             </div>
 
             <div class="stiffness-results">
@@ -1897,6 +1913,8 @@
     const pipeLengthLabel = document.querySelector("#pipeLengthLabel");
     const pipeRoughnessLabel = document.querySelector("#pipeRoughnessLabel");
     const pipeExtraZetaLabel = document.querySelector("#pipeExtraZetaLabel");
+    const pipeDiameterSolveStatus = document.querySelector("#pipeDiameterSolveStatus");
+    const solvePipeDiameterButton = document.querySelector("#solvePipeDiameter");
     const hertzInputs = Array.from(document.querySelectorAll("[data-hertz]"));
     const hertzInputMap = Object.fromEntries(hertzInputs.map((input) => [input.dataset.hertz, input]));
     const hertzDefaults = Object.fromEntries(hertzInputs.map((input) => [input.dataset.hertz, input.value]));
@@ -2923,6 +2941,113 @@
         flowState: pipeFlowState(reynolds),
         warnings
       };
+    }
+
+    function pipePressureUnitToPa(value, unit) {
+      if (unit === "MPa") return value * 1e6;
+      if (unit === "bar") return value * 1e5;
+      if (unit === "kPa") return value * 1e3;
+      return value;
+    }
+
+    function pipeTargetPressureDropPa() {
+      const target = pipeNumber("targetDrop", "目标总压降");
+      if (target <= 0) throw new Error("目标总压降必须大于 0。");
+      return pipePressureUnitToPa(target, pipeInputMap.targetDropUnit.value);
+    }
+
+    function evaluatePipeDiameter(baseData, diameterMm) {
+      return calculatePipeDrop({
+        ...baseData,
+        diameterM: diameterMm * 1e-3
+      });
+    }
+
+    function solvePipeDiameterForTarget(targetPressureDropPa) {
+      const baseData = collectPipeInput();
+      const minDiameterMm = 0.1;
+      const maxDiameterMm = 5000;
+      const sampleCount = 240;
+      let previous = null;
+      let interval = null;
+      let best = null;
+
+      for (let i = 0; i <= sampleCount; i += 1) {
+        const ratio = i / sampleCount;
+        const diameterMm = minDiameterMm * (maxDiameterMm / minDiameterMm) ** ratio;
+        let result;
+        try {
+          result = evaluatePipeDiameter(baseData, diameterMm);
+        } catch (error) {
+          previous = null;
+          continue;
+        }
+
+        const delta = result.totalPressureDropPa - targetPressureDropPa;
+        const candidate = { diameterMm, delta, result };
+        if (!best || Math.abs(delta) < Math.abs(best.delta)) {
+          best = candidate;
+        }
+
+        if (Math.abs(delta) <= Math.max(1e-6, targetPressureDropPa * 1e-8)) {
+          return candidate;
+        }
+
+        if (previous && previous.delta * delta < 0) {
+          interval = { low: previous, high: candidate };
+          break;
+        }
+
+        previous = candidate;
+      }
+
+      if (!interval) {
+        if (!best) throw new Error("当前参数无法进行内径反推。");
+        throw new Error(`0.1~5000 mm 范围内未找到满足目标压降的内径；最接近值为 D=${formatNumber(best.diameterMm)} mm，Δp=${formatNumber(best.result.totalPressureDropPa / 100000)} bar。`);
+      }
+
+      let low = interval.low;
+      let high = interval.high;
+      for (let i = 0; i < 90; i += 1) {
+        const midDiameterMm = Math.sqrt(low.diameterMm * high.diameterMm);
+        const result = evaluatePipeDiameter(baseData, midDiameterMm);
+        const delta = result.totalPressureDropPa - targetPressureDropPa;
+        const mid = { diameterMm: midDiameterMm, delta, result };
+
+        if (Math.abs(delta) <= Math.max(1e-6, targetPressureDropPa * 1e-8)) {
+          return mid;
+        }
+
+        if (low.delta * delta < 0) {
+          high = mid;
+        } else {
+          low = mid;
+        }
+      }
+
+      return Math.abs(low.delta) < Math.abs(high.delta) ? low : high;
+    }
+
+    function runPipeDiameterSolve() {
+      try {
+        updatePipeElementUi();
+        updatePipeFlowUnit();
+        const targetPressureDropPa = pipeTargetPressureDropPa();
+        const solution = solvePipeDiameterForTarget(targetPressureDropPa);
+        pipeInputMap.diameter.value = formatNumber(solution.diameterMm);
+        const result = calculatePipeDrop(collectPipeInput());
+        renderPipeResult(result);
+        const targetText = `${formatNumber(targetPressureDropPa / 100000)} bar`;
+        const solvedText = `反推结果：D = ${formatNumber(solution.diameterMm)} mm，总压降 = ${formatNumber(result.totalPressureDropPa / 100000)} bar。`;
+        pipeDiameterSolveStatus.textContent = `${solvedText} 目标总压降 ${targetText}。`;
+        window.lastPipeText = `${window.lastPipeText || buildPipeText(result)}\n\n内径反推\n目标总压降: ${targetText}\n${solvedText}`;
+        showToast("内径反推完成");
+        return result;
+      } catch (error) {
+        pipeDiameterSolveStatus.textContent = error.message;
+        showToast(error.message || "内径反推失败");
+        return null;
+      }
     }
 
     function buildPipeDiagram(result) {
@@ -5243,11 +5368,14 @@
       copyText(window.lastPipeText || "");
     });
 
+    solvePipeDiameterButton.addEventListener("click", runPipeDiameterSolve);
+
     document.querySelector("#resetPipe").addEventListener("click", () => {
       Object.entries(pipeDefaults).forEach(([key, value]) => {
         pipeInputMap[key].value = value;
       });
       updatePipeFlowUnit();
+      pipeDiameterSolveStatus.textContent = "按当前流量、物性和管道元件参数，求使总压降接近目标值的管径 D。";
       runPipeCalculation();
       showToast("管道参数已重置");
     });
