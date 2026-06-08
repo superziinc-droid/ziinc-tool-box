@@ -1257,15 +1257,81 @@
                 <label class="calc-field">
                   <span>元件</span>
                   <select data-pipe="element" aria-label="管道元件">
-                    <option value="circular">直圆管 Kreisrohr</option>
+                    <optgroup label="直管 Straight pipes">
+                      <option value="circular">直圆管 Kreisrohr</option>
+                      <option value="hydraulicStraight">矩形/环形/水渠/其他截面</option>
+                      <option value="corrugatedPipe">波纹管</option>
+                      <option value="userZeta">直接输入 ζ 值</option>
+                    </optgroup>
+                    <optgroup label="管道入口 Pipe entrance">
+                      <option value="sharpEntrance">锐边入口</option>
+                      <option value="roundedEntrance">圆角入口</option>
+                      <option value="angledEntrance">斜向锐边入口</option>
+                      <option value="projectingEntrance">内伸入口</option>
+                    </optgroup>
+                    <optgroup label="截面变化 Changes of section">
+                      <option value="suddenExpansion">突然扩大</option>
+                      <option value="suddenContraction">突然缩小</option>
+                      <option value="gradualExpansion">渐扩管</option>
+                      <option value="gradualContraction">渐缩管</option>
+                    </optgroup>
+                    <optgroup label="弯头 Bends">
+                      <option value="elbow90">90° 弯头</option>
+                      <option value="elbow45">45° 弯头</option>
+                      <option value="bendCustom">自定义圆弯头</option>
+                      <option value="segmentBend">分段弯头</option>
+                      <option value="miterBend">折角弯头</option>
+                    </optgroup>
+                    <optgroup label="补偿器 Bellows">
+                      <option value="corrugatedCompensator">波纹补偿器</option>
+                      <option value="uBend">U形弯</option>
+                      <option value="lyraBend">Lyra弯</option>
+                    </optgroup>
+                    <optgroup label="分支与阀门 Branches / valves">
+                      <option value="teeRun">三通直通</option>
+                      <option value="teeBranch">三通支管</option>
+                      <option value="yPipe">Y形管</option>
+                      <option value="gateValve">闸阀，全开</option>
+                      <option value="globeValve">截止阀，全开</option>
+                      <option value="yGlobeValve">斜座截止阀</option>
+                      <option value="angleValve">角阀</option>
+                      <option value="ballValve">球阀，全开</option>
+                      <option value="butterflyValve">蝶阀，全开</option>
+                      <option value="checkValve">止回阀</option>
+                      <option value="liftCheckValve">升降式止回阀</option>
+                    </optgroup>
+                    <optgroup label="节流与筛网 Orifices / strainers">
+                      <option value="isoOrifice">ISO 5167 标准孔板</option>
+                      <option value="orifice">孔板</option>
+                      <option value="roundOrifice">圆角孔板</option>
+                      <option value="thickOrifice">厚边孔板</option>
+                      <option value="nozzle">喷嘴</option>
+                      <option value="longNozzle">长半径喷嘴</option>
+                      <option value="venturi">文丘里管</option>
+                      <option value="perforatedPlate">多孔板</option>
+                      <option value="metalGrid">金属格栅</option>
+                      <option value="screen">金属丝筛网</option>
+                      <option value="yStrainer">Y型过滤器</option>
+                      <option value="basketStrainer">篮式过滤器</option>
+                      <option value="conicalStrainer">锥形过滤器</option>
+                    </optgroup>
+                    <optgroup label="可逆压差 Reversible">
+                      <option value="heightDifference">高度差</option>
+                      <option value="dynamicPressureChange">动压变化</option>
+                    </optgroup>
                   </select>
                   <span class="calc-unit">-</span>
                 </label>
                 <label class="calc-field">数量 <input data-pipe="count" value="1" inputmode="decimal"><span class="calc-unit">段</span></label>
-                <label class="calc-field">管径 D <input data-pipe="diameter" value="100" inputmode="decimal"><span class="calc-unit">mm</span></label>
-                <label class="calc-field">管长 L <input data-pipe="length" value="1" inputmode="decimal"><span class="calc-unit">m</span></label>
-                <label class="calc-field">绝对粗糙度 k <input data-pipe="roughness" value="0.10" inputmode="decimal"><span class="calc-unit">mm</span></label>
-                <label class="calc-field">附加局部阻力 ζ <input data-pipe="extraZeta" value="0" inputmode="decimal"><span class="calc-unit">-</span></label>
+                <label class="calc-field" id="pipeDiameterField"><span id="pipeDiameterLabel">管径 D</span><input data-pipe="diameter" value="100" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                <label class="calc-field field-hidden" id="pipeSecondDiameterField"><span id="pipeSecondDiameterLabel">第二管径 D2</span><input data-pipe="secondDiameter" value="160" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                <label class="calc-field" id="pipeLengthField"><span id="pipeLengthLabel">管长 L</span><input data-pipe="length" value="1" inputmode="decimal"><span class="calc-unit">m</span></label>
+                <label class="calc-field" id="pipeRoughnessField"><span id="pipeRoughnessLabel">绝对粗糙度 k</span><input data-pipe="roughness" value="0.10" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                <label class="calc-field field-hidden" id="pipeAngleField"><span id="pipeAngleLabel">角度 α</span><input data-pipe="angle" value="90" inputmode="decimal"><span class="calc-unit">deg</span></label>
+                <label class="calc-field field-hidden" id="pipeRadiusRatioField"><span id="pipeRadiusRatioLabel">弯曲半径 R/D</span><input data-pipe="radiusRatio" value="1.5" inputmode="decimal"><span class="calc-unit">-</span></label>
+                <label class="calc-field field-hidden" id="pipeOpenAreaField"><span id="pipeOpenAreaLabel">开孔率 φ</span><input data-pipe="openArea" value="60" inputmode="decimal"><span class="calc-unit">%</span></label>
+                <label class="calc-field"><span id="pipeExtraZetaLabel">附加局部阻力 ζ</span><input data-pipe="extraZeta" value="0" inputmode="decimal"><span class="calc-unit">-</span></label>
+                <p class="model-note" id="pipeElementNote">直圆管按 Darcy-Weisbach 与 Prandtl-Colebrook 计算沿程压降。</p>
               </div>
 
               <div class="input-section">
@@ -1771,6 +1837,16 @@
     const pipeSummary = document.querySelector("#pipeSummary");
     const pipeDetail = document.querySelector("#pipeDetail");
     const pipeFlowUnitLabel = document.querySelector("#pipeFlowUnitLabel");
+    const pipeElementNote = document.querySelector("#pipeElementNote");
+    const pipeSecondDiameterField = document.querySelector("#pipeSecondDiameterField");
+    const pipeLengthField = document.querySelector("#pipeLengthField");
+    const pipeRoughnessField = document.querySelector("#pipeRoughnessField");
+    const pipeAngleField = document.querySelector("#pipeAngleField");
+    const pipeRadiusRatioField = document.querySelector("#pipeRadiusRatioField");
+    const pipeOpenAreaField = document.querySelector("#pipeOpenAreaField");
+    const pipeLengthLabel = document.querySelector("#pipeLengthLabel");
+    const pipeRoughnessLabel = document.querySelector("#pipeRoughnessLabel");
+    const pipeExtraZetaLabel = document.querySelector("#pipeExtraZetaLabel");
     const hertzInputs = Array.from(document.querySelectorAll("[data-hertz]"));
     const hertzInputMap = Object.fromEntries(hertzInputs.map((input) => [input.dataset.hertz, input]));
     const hertzDefaults = Object.fromEntries(hertzInputs.map((input) => [input.dataset.hertz, input.value]));
@@ -2329,6 +2405,310 @@
       }
     }
 
+    const pipeElementCatalog = {
+      circular: {
+        name: "直圆管 Kreisrohr",
+        group: "直管",
+        image: "1601.gif",
+        fields: ["length", "roughness"],
+        note: "直圆管按 Darcy-Weisbach 与 Prandtl-Colebrook 计算沿程压降。",
+        zeta: ({ lambda, data }) => ({ value: lambda * data.lengthM / data.diameterM, method: "ζ = λL/D" })
+      },
+      hydraulicStraight: {
+        name: "矩形/环形/水渠/其他截面",
+        group: "直管",
+        image: "1602.gif",
+        fields: ["length", "roughness"],
+        note: "非圆截面按水力直径 D_h 作为输入管径进行沿程压降估算。",
+        zeta: ({ lambda, data }) => ({ value: lambda * data.lengthM / data.diameterM, method: "非圆截面 ζ≈λL/Dh" })
+      },
+      corrugatedPipe: {
+        name: "波纹管",
+        group: "直管",
+        image: "1605.gif",
+        fields: ["length", "roughness"],
+        note: "波纹管按等效粗糙直管估算，建议用实测等效粗糙度校准。",
+        zeta: ({ lambda, data }) => ({ value: 1.35 * lambda * data.lengthM / data.diameterM, method: "波纹管 ζ≈1.35λL/D" })
+      },
+      userZeta: {
+        name: "直接输入 ζ 值",
+        group: "阻力系数",
+        fields: [],
+        note: "用于 Zeta-Werte 场景；直接按输入 ζ 计算局部压降。",
+        zeta: () => ({ value: 0, method: "ζ = 用户输入值" })
+      },
+      sharpEntrance: {
+        name: "锐边入口",
+        group: "管道入口",
+        image: "1701.gif",
+        fields: [],
+        note: "锐边入口按常用局部阻力系数 ζ≈0.5 估算。",
+        zeta: () => ({ value: 0.5, method: "锐边入口 ζ≈0.5" })
+      },
+      roundedEntrance: {
+        name: "圆角入口",
+        group: "管道入口",
+        image: "1702.gif",
+        fields: [],
+        note: "充分圆角入口按 ζ≈0.04 估算。",
+        zeta: () => ({ value: 0.04, method: "圆角入口 ζ≈0.04" })
+      },
+      angledEntrance: {
+        name: "斜向锐边入口",
+        group: "管道入口",
+        image: "1703.gif",
+        fields: ["angle"],
+        note: "斜向锐边入口按入口角度修正 ζ。",
+        zeta: ({ data }) => ({ value: 0.5 + 0.35 * Math.sin(data.angleDeg * Math.PI / 180), method: "斜向入口 ζ≈0.5+0.35sinα" })
+      },
+      projectingEntrance: {
+        name: "内伸入口",
+        group: "管道入口",
+        image: "1704.gif",
+        fields: [],
+        note: "内伸入口按 ζ≈1.0 估算。",
+        zeta: () => ({ value: 1.0, method: "内伸入口 ζ≈1.0" })
+      },
+      suddenExpansion: {
+        name: "突然扩大",
+        group: "截面变化",
+        image: "1801.gif",
+        fields: ["secondDiameter"],
+        note: "突然扩大按 Borda-Carnot 关系 ζ=(1-A1/A2)^2，速度基准取小管。",
+        velocityDiameter: (data) => Math.min(data.diameterM, data.secondDiameterM),
+        zeta: ({ data }) => {
+          const small = Math.min(data.diameterM, data.secondDiameterM);
+          const large = Math.max(data.diameterM, data.secondDiameterM);
+          const areaRatio = (small / large) ** 2;
+          return { value: (1 - areaRatio) ** 2, method: "突然扩大 ζ=(1-A1/A2)^2" };
+        }
+      },
+      suddenContraction: {
+        name: "突然缩小",
+        group: "截面变化",
+        image: "1803.gif",
+        fields: ["secondDiameter"],
+        note: "突然缩小按收缩系数 Cc 估算，速度基准取小管。",
+        velocityDiameter: (data) => Math.min(data.diameterM, data.secondDiameterM),
+        zeta: ({ data }) => {
+          const beta = Math.min(data.diameterM, data.secondDiameterM) / Math.max(data.diameterM, data.secondDiameterM);
+          const cc = 0.62 + 0.38 * beta ** 3;
+          return { value: (1 / cc - 1) ** 2, method: "突然缩小 ζ=(1/Cc-1)^2" };
+        }
+      },
+      gradualExpansion: {
+        name: "渐扩管",
+        group: "截面变化",
+        image: "1802.gif",
+        fields: ["secondDiameter", "angle"],
+        note: "渐扩管在突然扩大基础上按扩散角修正。",
+        velocityDiameter: (data) => Math.min(data.diameterM, data.secondDiameterM),
+        zeta: ({ data }) => {
+          const small = Math.min(data.diameterM, data.secondDiameterM);
+          const large = Math.max(data.diameterM, data.secondDiameterM);
+          const areaRatio = (small / large) ** 2;
+          const angleFactor = Math.max(0.15, Math.min(1, Math.sin(Math.max(data.angleDeg, 1) * Math.PI / 360)));
+          return { value: angleFactor * (1 - areaRatio) ** 2, method: "渐扩管 ζ≈f(α)(1-A1/A2)^2" };
+        }
+      },
+      gradualContraction: {
+        name: "渐缩管",
+        group: "截面变化",
+        image: "1804.gif",
+        fields: ["secondDiameter", "angle"],
+        note: "渐缩管按锥形收缩经验式估算。",
+        velocityDiameter: (data) => Math.min(data.diameterM, data.secondDiameterM),
+        zeta: ({ data }) => {
+          const beta = Math.min(data.diameterM, data.secondDiameterM) / Math.max(data.diameterM, data.secondDiameterM);
+          const angleFactor = Math.max(0.05, Math.min(0.5, data.angleDeg / 180));
+          return { value: angleFactor * (1 - beta ** 2), method: "渐缩管 ζ≈f(α)(1-β²)" };
+        }
+      },
+      elbow90: {
+        name: "90° 弯头",
+        group: "弯头",
+        image: "2101.gif",
+        fields: ["radiusRatio"],
+        note: "90° 弯头按 R/D 修正的局部阻力估算。",
+        zeta: ({ data }) => ({ value: 0.21 * Math.sqrt(1.5 / data.radiusRatio), method: "90° 弯头 ζ≈0.21√(1.5/(R/D))" })
+      },
+      elbow45: {
+        name: "45° 弯头",
+        group: "弯头",
+        image: "2101.gif",
+        fields: ["radiusRatio"],
+        note: "45° 弯头按 90° 弯头的一半角度估算。",
+        zeta: ({ data }) => ({ value: 0.5 * 0.21 * Math.sqrt(1.5 / data.radiusRatio), method: "45° 弯头 ζ≈0.5×90°弯头" })
+      },
+      bendCustom: {
+        name: "自定义圆弯头",
+        group: "弯头",
+        image: "2101.gif",
+        fields: ["angle", "radiusRatio"],
+        note: "自定义圆弯头按弯曲角度和 R/D 修正。",
+        zeta: ({ data }) => ({ value: (data.angleDeg / 90) * 0.21 * Math.sqrt(1.5 / data.radiusRatio), method: "圆弯头 ζ≈(α/90)·0.21√(1.5/(R/D))" })
+      },
+      segmentBend: {
+        name: "分段弯头",
+        group: "弯头",
+        image: "2102.gif",
+        fields: ["angle"],
+        note: "分段弯头按折线转弯局部阻力估算。",
+        zeta: ({ data }) => ({ value: 0.9 * data.angleDeg / 90, method: "分段弯头 ζ≈0.9α/90" })
+      },
+      miterBend: {
+        name: "折角弯头",
+        group: "弯头",
+        image: "2105.gif",
+        fields: ["angle"],
+        note: "折角弯头按突转弯经验系数估算。",
+        zeta: ({ data }) => ({ value: 1.2 * Math.sin(data.angleDeg * Math.PI / 360) ** 2 + 0.25 * data.angleDeg / 90, method: "折角弯头经验 ζ" })
+      },
+      corrugatedCompensator: { name: "波纹补偿器", group: "补偿器", image: "2301.gif", fields: [], note: "波纹补偿器按 ζ≈2.0 估算。", zeta: () => ({ value: 2.0, method: "波纹补偿器 ζ≈2.0" }) },
+      uBend: { name: "U形弯", group: "补偿器", image: "2303.gif", fields: [], note: "U形弯按 ζ≈1.5 估算。", zeta: () => ({ value: 1.5, method: "U形弯 ζ≈1.5" }) },
+      lyraBend: { name: "Lyra弯", group: "补偿器", image: "2302.gif", fields: [], note: "Lyra弯按 ζ≈2.0 估算。", zeta: () => ({ value: 2.0, method: "Lyra弯 ζ≈2.0" }) },
+      teeRun: { name: "三通直通", group: "分支", image: "2201.gif", fields: [], note: "三通直通按常用 ζ≈0.6 估算。", zeta: () => ({ value: 0.6, method: "三通直通 ζ≈0.6" }) },
+      teeBranch: { name: "三通支管", group: "分支", image: "2205.gif", fields: [], note: "三通支管按常用 ζ≈1.8 估算。", zeta: () => ({ value: 1.8, method: "三通支管 ζ≈1.8" }) },
+      yPipe: { name: "Y形管", group: "分支", image: "2207.gif", fields: [], note: "Y形管按 ζ≈0.8 估算。", zeta: () => ({ value: 0.8, method: "Y形管 ζ≈0.8" }) },
+      gateValve: { name: "闸阀，全开", group: "阀门", image: "2404.gif", fields: [], note: "全开闸阀按 ζ≈0.15 估算。", zeta: () => ({ value: 0.15, method: "全开闸阀 ζ≈0.15" }) },
+      globeValve: { name: "截止阀，全开", group: "阀门", image: "2401.gif", fields: [], note: "全开截止阀按 ζ≈10 估算。", zeta: () => ({ value: 10, method: "全开截止阀 ζ≈10" }) },
+      yGlobeValve: { name: "斜座截止阀", group: "阀门", image: "2402.gif", fields: [], note: "斜座截止阀按 ζ≈3.0 估算。", zeta: () => ({ value: 3.0, method: "斜座截止阀 ζ≈3.0" }) },
+      angleValve: { name: "角阀", group: "阀门", image: "2403.gif", fields: [], note: "角阀按 ζ≈5.0 估算。", zeta: () => ({ value: 5.0, method: "角阀 ζ≈5.0" }) },
+      ballValve: { name: "球阀，全开", group: "阀门", image: "2405.gif", fields: [], note: "全开球阀按 ζ≈0.05 估算。", zeta: () => ({ value: 0.05, method: "全开球阀 ζ≈0.05" }) },
+      butterflyValve: { name: "蝶阀，全开", group: "阀门", image: "2406.gif", fields: [], note: "全开蝶阀按 ζ≈0.8 估算。", zeta: () => ({ value: 0.8, method: "全开蝶阀 ζ≈0.8" }) },
+      checkValve: { name: "止回阀", group: "止回阀", image: "2503.gif", fields: [], note: "止回阀按 ζ≈2.0 估算。", zeta: () => ({ value: 2.0, method: "止回阀 ζ≈2.0" }) },
+      liftCheckValve: { name: "升降式止回阀", group: "止回阀", image: "2501.gif", fields: [], note: "升降式止回阀按 ζ≈6.0 估算。", zeta: () => ({ value: 6.0, method: "升降式止回阀 ζ≈6.0" }) },
+      isoOrifice: {
+        name: "ISO 5167 标准孔板",
+        group: "节流件",
+        image: "2601.gif",
+        fields: ["secondDiameter"],
+        note: "ISO标准孔板用孔径比 β 和 Cd≈0.61 近似估算压降。",
+        zeta: ({ data }) => {
+          const beta = Math.min(data.secondDiameterM, data.diameterM) / Math.max(data.secondDiameterM, data.diameterM);
+          const cd = 0.61;
+          return { value: (1 - beta ** 4) / (cd ** 2 * beta ** 4), method: "ISO孔板 ζ≈(1-β⁴)/(Cd²β⁴), Cd=0.61" };
+        }
+      },
+      orifice: {
+        name: "孔板",
+        group: "节流件",
+        image: "2602.gif",
+        fields: ["secondDiameter"],
+        note: "孔板按孔径比 β 和 Cd≈0.61 估算不可恢复压降。",
+        zeta: ({ data }) => {
+          const beta = Math.min(data.secondDiameterM, data.diameterM) / Math.max(data.secondDiameterM, data.diameterM);
+          const cd = 0.61;
+          return { value: (1 - beta ** 4) / (cd ** 2 * beta ** 4), method: "孔板 ζ≈(1-β⁴)/(Cd²β⁴), Cd=0.61" };
+        }
+      },
+      roundOrifice: {
+        name: "圆角孔板",
+        group: "节流件",
+        image: "2603.gif",
+        fields: ["secondDiameter"],
+        note: "圆角孔板按 Cd≈0.80 估算。",
+        zeta: ({ data }) => {
+          const beta = Math.min(data.secondDiameterM, data.diameterM) / Math.max(data.secondDiameterM, data.diameterM);
+          const cd = 0.80;
+          return { value: (1 - beta ** 4) / (cd ** 2 * beta ** 4), method: "圆角孔板 ζ≈(1-β⁴)/(Cd²β⁴), Cd=0.80" };
+        }
+      },
+      thickOrifice: {
+        name: "厚边孔板",
+        group: "节流件",
+        image: "2604.gif",
+        fields: ["secondDiameter"],
+        note: "厚边孔板按 Cd≈0.75 估算。",
+        zeta: ({ data }) => {
+          const beta = Math.min(data.secondDiameterM, data.diameterM) / Math.max(data.secondDiameterM, data.diameterM);
+          const cd = 0.75;
+          return { value: (1 - beta ** 4) / (cd ** 2 * beta ** 4), method: "厚边孔板 ζ≈(1-β⁴)/(Cd²β⁴), Cd=0.75" };
+        }
+      },
+      nozzle: {
+        name: "喷嘴",
+        group: "节流件",
+        image: "2605.gif",
+        fields: ["secondDiameter"],
+        note: "喷嘴按孔径比 β 和 Cd≈0.97 估算。",
+        zeta: ({ data }) => {
+          const beta = Math.min(data.secondDiameterM, data.diameterM) / Math.max(data.secondDiameterM, data.diameterM);
+          const cd = 0.97;
+          return { value: Math.max(0.02, (1 - beta ** 4) / (cd ** 2 * beta ** 4)), method: "喷嘴 ζ≈(1-β⁴)/(Cd²β⁴), Cd=0.97" };
+        }
+      },
+      longNozzle: {
+        name: "长半径喷嘴",
+        group: "节流件",
+        image: "26051.gif",
+        fields: ["secondDiameter"],
+        note: "长半径喷嘴按 Cd≈0.98 估算。",
+        zeta: ({ data }) => {
+          const beta = Math.min(data.secondDiameterM, data.diameterM) / Math.max(data.secondDiameterM, data.diameterM);
+          const cd = 0.98;
+          return { value: Math.max(0.015, (1 - beta ** 4) / (cd ** 2 * beta ** 4)), method: "长半径喷嘴 ζ≈(1-β⁴)/(Cd²β⁴), Cd=0.98" };
+        }
+      },
+      venturi: {
+        name: "文丘里管",
+        group: "节流件",
+        image: "2606.gif",
+        fields: ["secondDiameter"],
+        note: "文丘里管按较高恢复效率估算。",
+        zeta: ({ data }) => {
+          const beta = Math.min(data.secondDiameterM, data.diameterM) / Math.max(data.secondDiameterM, data.diameterM);
+          return { value: Math.max(0.05, 0.12 * (1 - beta ** 4) / Math.max(beta ** 4, 0.02)), method: "文丘里 ζ≈0.12(1-β⁴)/β⁴" };
+        }
+      },
+      perforatedPlate: {
+        name: "多孔板",
+        group: "孔板",
+        image: "3001.gif",
+        fields: ["openArea"],
+        note: "多孔板按开孔率 φ 估算。",
+        zeta: ({ data }) => ({ value: Math.max(0, (1 / data.openAreaRatio ** 2 - 1) * 0.5), method: "多孔板 ζ≈0.5(1/φ²-1)" })
+      },
+      metalGrid: {
+        name: "金属格栅",
+        group: "筛网",
+        image: "3010.gif",
+        fields: ["openArea"],
+        note: "金属格栅按开孔率 φ 估算。",
+        zeta: ({ data }) => ({ value: Math.max(0, 0.7 * (1 - data.openAreaRatio) / data.openAreaRatio ** 2), method: "格栅 ζ≈0.7(1-φ)/φ²" })
+      },
+      screen: {
+        name: "筛网 / 格栅",
+        group: "筛网",
+        image: "3012.gif",
+        fields: ["openArea"],
+        note: "筛网/格栅按开孔率 φ 估算。",
+        zeta: ({ data }) => ({ value: Math.max(0, (1 - data.openAreaRatio) / data.openAreaRatio ** 2), method: "筛网 ζ≈(1-φ)/φ²" })
+      },
+      yStrainer: { name: "Y型过滤器", group: "筛网", image: "3016.gif", fields: [], note: "Y型过滤器按 ζ≈2.0 估算。", zeta: () => ({ value: 2.0, method: "Y型过滤器 ζ≈2.0" }) },
+      basketStrainer: { name: "篮式过滤器", group: "筛网", image: "3017.gif", fields: [], note: "篮式过滤器按 ζ≈2.5 估算。", zeta: () => ({ value: 2.5, method: "篮式过滤器 ζ≈2.5" }) },
+      conicalStrainer: { name: "锥形过滤器", group: "筛网", image: "3018.gif", fields: [], note: "锥形过滤器按 ζ≈1.5 估算。", zeta: () => ({ value: 1.5, method: "锥形过滤器 ζ≈1.5" }) },
+      heightDifference: {
+        name: "高度差",
+        group: "可逆压差",
+        image: "2801.gif",
+        fields: ["length"],
+        note: "高度差按 Δp=ρgH 计算，管长 L 作为高度差 H。",
+        zeta: ({ data, dynamicPressurePa }) => ({ value: (data.densityKgM3 * 9.80665 * data.lengthM) / dynamicPressurePa, method: "高度差 Δp=ρgH，换算为等效 ζ" })
+      },
+      dynamicPressureChange: {
+        name: "动压变化",
+        group: "可逆压差",
+        image: "3202.png",
+        fields: ["secondDiameter"],
+        note: "动压变化按两管径速度差估算可逆压力变化。",
+        zeta: ({ data }) => {
+          const beta = data.diameterM / data.secondDiameterM;
+          return { value: Math.abs(1 - beta ** 4), method: "动压变化 ζ≈|1-(D1/D2)^4|" };
+        }
+      }
+    };
+
     function pipeNumber(key, label) {
       const value = parseValue(pipeInputMap[key].value);
       if (value === null) {
@@ -2354,10 +2734,16 @@
       pipeFlowUnitLabel.textContent = mode === "mass" ? "kg/h" : mode === "normalVolume" ? "Nm³/h" : "m³/h";
     }
 
+    function currentPipeElement() {
+      return pipeElementCatalog[pipeInputMap.element.value] || pipeElementCatalog.circular;
+    }
+
     function collectPipeInput() {
+      const elementDef = currentPipeElement();
       return {
         element: pipeInputMap.element.value,
-        elementName: "直圆管 Kreisrohr",
+        elementName: elementDef.name,
+        elementDef,
         medium: pipeInputMap.medium.value.trim() || "未命名介质",
         phase: pipeInputMap.phase.value,
         flowMode: pipeInputMap.flowMode.value,
@@ -2366,8 +2752,12 @@
         viscosityPaS: pipeViscosityToPaS(pipeNumber("viscosity", "动力黏度"), pipeInputMap.viscosityUnit.value),
         count: pipeNumber("count", "数量"),
         diameterM: pipeNumber("diameter", "管径") * 1e-3,
+        secondDiameterM: pipeNumber("secondDiameter", "第二管径") * 1e-3,
         lengthM: pipeNumber("length", "管长"),
         roughnessM: pipeNumber("roughness", "绝对粗糙度") * 1e-3,
+        angleDeg: pipeNumber("angle", "角度"),
+        radiusRatio: pipeNumber("radiusRatio", "弯曲半径 R/D"),
+        openAreaRatio: pipeNumber("openArea", "开孔率") / 100,
         extraZeta: pipeNumber("extraZeta", "附加局部阻力"),
         inletPressurePa: pipeNumber("inletPressure", "入口绝压") * 1e5,
         inletTempK: pipeNumber("inletTemp", "入口温度") + 273.15,
@@ -2376,14 +2766,17 @@
     }
 
     function validatePipeInput(data) {
-      if (data.element !== "circular") throw new Error("当前版本仅实现 pressure-drop.online 的直圆管 Kreisrohr 主计算链路。");
       if (data.flowValue <= 0) throw new Error("流量必须大于 0。");
       if (data.densityKgM3 <= 0) throw new Error("密度必须大于 0。");
       if (data.viscosityPaS <= 0) throw new Error("动力黏度必须大于 0。");
       if (data.count <= 0) throw new Error("数量必须大于 0。");
       if (data.diameterM <= 0) throw new Error("管径必须大于 0。");
+      if (data.secondDiameterM <= 0) throw new Error("第二管径必须大于 0。");
       if (data.lengthM < 0) throw new Error("管长不能小于 0。");
       if (data.roughnessM < 0) throw new Error("绝对粗糙度不能小于 0。");
+      if (data.angleDeg <= 0 || data.angleDeg > 180) throw new Error("角度应在 0 到 180° 之间。");
+      if (data.radiusRatio <= 0) throw new Error("弯曲半径 R/D 必须大于 0。");
+      if (!(data.openAreaRatio > 0 && data.openAreaRatio <= 1)) throw new Error("开孔率应在 0 到 100% 之间。");
       if (data.extraZeta < 0) throw new Error("附加局部阻力 ζ 不能小于 0。");
       if (data.inletPressurePa <= 0) throw new Error("入口绝压必须大于 0。");
       if (data.inletTempK <= 0 || data.outletTempK <= 0) throw new Error("温度必须高于绝对零度。");
@@ -2430,17 +2823,19 @@
 
     function calculatePipeDrop(data) {
       validatePipeInput(data);
-      const areaM2 = Math.PI * data.diameterM ** 2 / 4;
+      const elementDef = data.elementDef;
+      const velocityDiameterM = elementDef.velocityDiameter ? elementDef.velocityDiameter(data) : data.diameterM;
+      const areaM2 = Math.PI * velocityDiameterM ** 2 / 4;
       const volumeFlowM3S = pipeVolumeFlowM3S(data);
       const velocityMS = volumeFlowM3S / areaM2;
       const massFlowKgS = data.densityKgM3 * volumeFlowM3S;
-      const reynolds = data.densityKgM3 * velocityMS * data.diameterM / data.viscosityPaS;
-      const relativeRoughness = data.roughnessM / data.diameterM;
+      const reynolds = data.densityKgM3 * velocityMS * velocityDiameterM / data.viscosityPaS;
+      const relativeRoughness = data.roughnessM / velocityDiameterM;
       const lambda = pipeFrictionFactor(reynolds, relativeRoughness);
-      const pipeZeta = lambda * data.lengthM / data.diameterM;
-      const zetaPerElement = pipeZeta + data.extraZeta;
-      const totalZeta = zetaPerElement * data.count;
       const dynamicPressurePa = data.densityKgM3 * velocityMS ** 2 / 2;
+      const elementZeta = elementDef.zeta({ data, lambda, reynolds, velocityMS, dynamicPressurePa });
+      const zetaPerElement = elementZeta.value + data.extraZeta;
+      const totalZeta = zetaPerElement * data.count;
       const pressureDropPerElementPa = zetaPerElement * dynamicPressurePa;
       const totalPressureDropPa = pressureDropPerElementPa * data.count;
       const warnings = [];
@@ -2454,9 +2849,13 @@
       if (data.flowMode === "normalVolume" && data.phase !== "gas") {
         warnings.push("标准体积流量通常用于气体；当前仍按理想气体换算体积流量。");
       }
+      if (data.extraZeta > 0) {
+        warnings.push(`已叠加附加局部阻力 ζ=${formatNumber(data.extraZeta)}。`);
+      }
 
       return {
         ...data,
+        velocityDiameterM,
         areaM2,
         volumeFlowM3S,
         massFlowKgS,
@@ -2464,7 +2863,8 @@
         reynolds,
         relativeRoughness,
         lambda,
-        pipeZeta,
+        localZeta: elementZeta.value,
+        zetaMethod: elementZeta.method,
         zetaPerElement,
         totalZeta,
         dynamicPressurePa,
@@ -2476,27 +2876,30 @@
     }
 
     function buildPipeDiagram(result) {
+      const imageMarkup = result.elementDef.image
+        ? `<image href="https://www.pressure-drop.online/imgs/${result.elementDef.image}" x="62" y="42" width="304" height="180" preserveAspectRatio="xMidYMid meet"/>`
+        : `<text x="72" y="132" fill="#1a73e8" font-size="24" font-weight="700">ζ</text><text x="110" y="132" fill="#202124" font-size="18">直接输入阻力系数</text>`;
       const lines = [
-        `D：管内径 = ${formatNumber(result.diameterM * 1000)} mm`,
-        `L：单段管长 = ${formatNumber(result.lengthM)} m`,
-        `k：绝对粗糙度 = ${formatNumber(result.roughnessM * 1000)} mm`,
+        `元件：${result.elementName}`,
+        `D：计算基准管径 = ${formatNumber(result.velocityDiameterM * 1000)} mm`,
         `Q：实际体积流量 = ${formatNumber(result.volumeFlowM3S * 3600)} m³/h`,
         `v：流速 = ${formatNumber(result.velocityMS)} m/s`,
         `Re：雷诺数 = ${formatNumber(result.reynolds)}`,
         `λ：Darcy 管摩擦系数 = ${formatNumber(result.lambda)}`,
-        `ζ：λL/D + ζlocal = ${formatNumber(result.zetaPerElement)}`
+        `ζlocal：${formatNumber(result.localZeta)}`,
+        `ζtotal：${formatNumber(result.zetaPerElement)}`
       ];
 
       return `
         <svg viewBox="0 0 860 430" role="img" aria-label="管道压降计算示意图">
           <rect x="0" y="0" width="860" height="430" fill="#fff"/>
-          <text x="24" y="38" fill="#202124" font-size="21" font-weight="700">直圆管压降模型</text>
-          <text x="24" y="64" fill="#5f6368" font-size="14">对应 pressure-drop.online / Straight pipes / circular 的核心计算链路</text>
+          <text x="24" y="38" fill="#202124" font-size="21" font-weight="700">${escapeHtml(result.elementName)}</text>
+          <text x="24" y="64" fill="#5f6368" font-size="14">对应 pressure-drop.online 的 ${escapeHtml(result.elementDef.group)} 元件场景</text>
           <g transform="translate(34 104)">
             <rect x="18" y="16" width="392" height="256" rx="10" fill="#f8fafd" stroke="#dadce0"/>
-            <image href="https://www.pressure-drop.online/imgs/1601.gif" x="62" y="42" width="304" height="180" preserveAspectRatio="xMidYMid meet"/>
-            <text x="34" y="296" fill="#5f6368" font-size="13">示意图来源：pressure-drop.online / Straight pipes / circular</text>
-            <text x="34" y="318" fill="#202124" font-size="14">Δp = ζ · ρv² / 2，ζ = λL/D + ζlocal</text>
+            ${imageMarkup}
+            <text x="34" y="296" fill="#5f6368" font-size="13">示意图来源：pressure-drop.online 元件图库</text>
+            <text x="34" y="318" fill="#202124" font-size="14">Δp = ζ · ρv² / 2；${escapeHtml(result.zetaMethod)}</text>
           </g>
           <rect x="472" y="82" width="336" height="292" rx="8" fill="#f8fafd" stroke="#dadce0"/>
           <text x="494" y="112" fill="#202124" font-size="16" font-weight="700">参数与结果说明</text>
@@ -2519,7 +2922,8 @@
         `Reynolds 数: ${formatNumber(result.reynolds)} (${result.flowState})`,
         `相对粗糙度 k/D: ${formatNumber(result.relativeRoughness)}`,
         `Darcy 管摩擦系数 λ: ${formatNumber(result.lambda)}`,
-        `单段 ζ: ${formatNumber(result.zetaPerElement)}; 总 ζ: ${formatNumber(result.totalZeta)}`,
+        `局部/沿程模型: ${result.zetaMethod}`,
+        `元件 ζ: ${formatNumber(result.localZeta)}; 单段总 ζ: ${formatNumber(result.zetaPerElement)}; 多段总 ζ: ${formatNumber(result.totalZeta)}`,
         `单段压降: ${formatNumber(result.pressureDropPerElementPa / 1000)} kPa`,
         `总压降: ${formatNumber(result.totalPressureDropPa / 1000)} kPa = ${formatNumber(result.totalPressureDropPa / 100000)} bar`,
         "方法: 层流 λ=64/Re；湍流 λ 使用 Prandtl-Colebrook；Δp=ζρv²/2。"
@@ -2550,7 +2954,8 @@
       pipeSummary.innerHTML = `
         <div class="strength-summary">
           <div class="summary-line">模型：${escapeHtml(result.elementName)}。Δp = ${escapeHtml(formatNumber(result.totalPressureDropPa / 100000))} bar，λ = ${escapeHtml(formatNumber(result.lambda))}，ζ = ${escapeHtml(formatNumber(result.totalZeta))}</div>
-          <div class="summary-line">计算链路：Q → v → Re → λ → ζ → Δp；湍流区使用 Prandtl-Colebrook，层流区使用 64/Re。</div>
+          <div class="summary-line">ζ模型：${escapeHtml(result.zetaMethod)}；计算链路：Q → v → Re → λ/ζ → Δp。</div>
+          <div class="summary-line">说明：湍流 λ 使用 Prandtl-Colebrook，层流 λ 使用 64/Re；局部元件按常用工程 ζ 估算。</div>
           ${warnings}
         </div>
       `;
@@ -2558,8 +2963,32 @@
       window.lastPipeText = buildPipeText(result);
     }
 
+    function updatePipeElementUi() {
+      const elementDef = currentPipeElement();
+      const fields = new Set(elementDef.fields || []);
+
+      pipeSecondDiameterField.classList.toggle("field-hidden", !fields.has("secondDiameter"));
+      pipeLengthField.classList.toggle("field-hidden", !fields.has("length"));
+      pipeRoughnessField.classList.toggle("field-hidden", !fields.has("roughness"));
+      pipeAngleField.classList.toggle("field-hidden", !fields.has("angle"));
+      pipeRadiusRatioField.classList.toggle("field-hidden", !fields.has("radiusRatio"));
+      pipeOpenAreaField.classList.toggle("field-hidden", !fields.has("openArea"));
+
+      pipeLengthLabel.textContent = pipeInputMap.element.value === "heightDifference" ? "高度差 H" : "管长 L";
+      pipeRoughnessLabel.textContent = fields.has("roughness") ? "绝对粗糙度 k" : "绝对粗糙度 k";
+      pipeExtraZetaLabel.textContent = pipeInputMap.element.value === "userZeta" ? "输入阻力系数 ζ" : "附加局部阻力 ζ";
+      pipeElementNote.textContent = elementDef.note;
+
+      if (["orifice", "nozzle"].includes(pipeInputMap.element.value)) {
+        document.querySelector("#pipeSecondDiameterLabel").textContent = "孔径 d";
+      } else {
+        document.querySelector("#pipeSecondDiameterLabel").textContent = "第二管径 D2";
+      }
+    }
+
     function runPipeCalculation() {
       try {
+        updatePipeElementUi();
         updatePipeFlowUnit();
         const result = calculatePipeDrop(collectPipeInput());
         renderPipeResult(result);
