@@ -814,6 +814,44 @@
       letter-spacing: 0;
     }
 
+    .official-calculator {
+      margin-top: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .official-calculator-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #f8fafd;
+    }
+
+    .official-calculator-head h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .official-calculator-head p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .official-calculator iframe {
+      display: block;
+      width: 100%;
+      height: min(760px, 78vh);
+      border: 0;
+      background: #fff;
+    }
+
     .stiffness-diagram {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -1246,6 +1284,7 @@
             <h2>管道压降计算</h2>
             <div class="utility-actions">
               <button class="text-button" type="button" id="copyPipeStats">复制结果</button>
+              <a class="text-button" href="https://www.pressure-drop.online/" target="_blank" rel="noopener">打开原站</a>
               <button class="text-button" type="button" id="resetPipe">重置</button>
             </div>
           </div>
@@ -1381,6 +1420,17 @@
               <div class="detail-text" id="pipeSummary">输入管道、流量和物性后自动计算压降。</div>
               <div class="pipe-diagram" id="pipeDetail" aria-label="管道压降计算示意图"></div>
             </div>
+          </div>
+
+          <div class="official-calculator" aria-label="Pressure-Drop.online 官方核验">
+            <div class="official-calculator-head">
+              <div>
+                <h3>Pressure-Drop.online 官方核验</h3>
+                <p>完全一致的计算结果以原站服务端为准；该窗口需要按原站要求输入验证码。</p>
+              </div>
+              <a class="text-button" href="https://www.pressure-drop.online/" target="_blank" rel="noopener">新窗口打开</a>
+            </div>
+            <iframe src="https://www.pressure-drop.online/" title="Pressure-Drop.online 官方计算器" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
           </div>
         </section>
 
@@ -2894,11 +2944,11 @@
         <svg viewBox="0 0 860 430" role="img" aria-label="管道压降计算示意图">
           <rect x="0" y="0" width="860" height="430" fill="#fff"/>
           <text x="24" y="38" fill="#202124" font-size="21" font-weight="700">${escapeHtml(result.elementName)}</text>
-          <text x="24" y="64" fill="#5f6368" font-size="14">对应 pressure-drop.online 的 ${escapeHtml(result.elementDef.group)} 元件场景</text>
+          <text x="24" y="64" fill="#5f6368" font-size="14">参考 pressure-drop.online 的 ${escapeHtml(result.elementDef.group)} 元件分类</text>
           <g transform="translate(34 104)">
             <rect x="18" y="16" width="392" height="256" rx="10" fill="#f8fafd" stroke="#dadce0"/>
             ${imageMarkup}
-            <text x="34" y="296" fill="#5f6368" font-size="13">示意图来源：pressure-drop.online 元件图库</text>
+            <text x="34" y="296" fill="#5f6368" font-size="13">本地结果为工程估算；逐项核验请使用下方原站窗口</text>
             <text x="34" y="318" fill="#202124" font-size="14">Δp = ζ · ρv² / 2；${escapeHtml(result.zetaMethod)}</text>
           </g>
           <rect x="472" y="82" width="336" height="292" rx="8" fill="#f8fafd" stroke="#dadce0"/>
