@@ -795,6 +795,25 @@
       letter-spacing: 0;
     }
 
+    .pipe-diagram {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: auto;
+    }
+
+    .pipe-diagram svg {
+      display: block;
+      width: 100%;
+      min-width: 720px;
+      height: auto;
+    }
+
+    .pipe-diagram text {
+      font-family: Inter, Roboto, "Google Sans", "Microsoft YaHei", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
     .stiffness-diagram {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -1120,6 +1139,7 @@
     <nav class="app-nav" aria-label="页面导航">
       <button class="nav-item" type="button" data-page-target="home" aria-current="page">首页资料</button>
       <button class="nav-item" type="button" data-page-target="units">单位转换</button>
+      <button class="nav-item" type="button" data-page-target="pipe">管道压降</button>
       <button class="nav-item" type="button" data-page-target="hertz">赫兹接触</button>
       <button class="nav-item" type="button" data-page-target="stiffness">球-V槽刚度</button>
       <button class="nav-item" type="button" data-page-target="data">稳定性计算</button>
@@ -1219,6 +1239,83 @@
           </div>
 
           <div class="quick-conversions" id="quickConversions" aria-label="常用换算"></div>
+        </section>
+
+        <section class="panel stiffness-panel" aria-label="管道压降计算" data-page-section="pipe">
+          <div class="section-title-row">
+            <h2>管道压降计算</h2>
+            <div class="utility-actions">
+              <button class="text-button" type="button" id="copyPipeStats">复制结果</button>
+              <button class="text-button" type="button" id="resetPipe">重置</button>
+            </div>
+          </div>
+
+          <div class="stiffness-grid">
+            <div class="stiffness-form">
+              <div class="input-section">
+                <h3>管道元件</h3>
+                <label class="calc-field">
+                  <span>元件</span>
+                  <select data-pipe="element" aria-label="管道元件">
+                    <option value="circular">直圆管 Kreisrohr</option>
+                  </select>
+                  <span class="calc-unit">-</span>
+                </label>
+                <label class="calc-field">数量 <input data-pipe="count" value="1" inputmode="decimal"><span class="calc-unit">段</span></label>
+                <label class="calc-field">管径 D <input data-pipe="diameter" value="100" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                <label class="calc-field">管长 L <input data-pipe="length" value="1" inputmode="decimal"><span class="calc-unit">m</span></label>
+                <label class="calc-field">绝对粗糙度 k <input data-pipe="roughness" value="0.10" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                <label class="calc-field">附加局部阻力 ζ <input data-pipe="extraZeta" value="0" inputmode="decimal"><span class="calc-unit">-</span></label>
+              </div>
+
+              <div class="input-section">
+                <h3>流体与流量</h3>
+                <label class="calc-field">介质名称 <input data-pipe="medium" value="Water 20°C"><span class="calc-unit">-</span></label>
+                <label class="calc-field">
+                  <span>状态</span>
+                  <select data-pipe="phase" aria-label="流体状态">
+                    <option value="liquid">液体</option>
+                    <option value="gas">气体</option>
+                  </select>
+                  <span class="calc-unit">-</span>
+                </label>
+                <label class="calc-field">
+                  <span>流量类型</span>
+                  <select data-pipe="flowMode" aria-label="流量类型">
+                    <option value="volume">体积流量</option>
+                    <option value="mass">质量流量</option>
+                    <option value="normalVolume">标准体积流量</option>
+                  </select>
+                  <span class="calc-unit">-</span>
+                </label>
+                <label class="calc-field">流量数值 <input data-pipe="flowValue" value="100" inputmode="decimal"><span class="calc-unit" id="pipeFlowUnitLabel">m³/h</span></label>
+                <label class="calc-field">密度 ρ <input data-pipe="density" value="998.206" inputmode="decimal"><span class="calc-unit">kg/m³</span></label>
+                <label class="calc-field">
+                  <span>动力黏度 μ</span>
+                  <input data-pipe="viscosity" value="1001.605" inputmode="decimal">
+                  <select data-pipe="viscosityUnit" aria-label="动力黏度单位">
+                    <option value="uPaS">μPa·s</option>
+                    <option value="mPaS">mPa·s / cP</option>
+                    <option value="PaS">Pa·s</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="input-section">
+                <h3>气体修正</h3>
+                <label class="calc-field">入口绝压 <input data-pipe="inletPressure" value="1.01325" inputmode="decimal"><span class="calc-unit">bar(a)</span></label>
+                <label class="calc-field">入口温度 <input data-pipe="inletTemp" value="20" inputmode="decimal"><span class="calc-unit">°C</span></label>
+                <label class="calc-field">出口温度 <input data-pipe="outletTemp" value="20" inputmode="decimal"><span class="calc-unit">°C</span></label>
+                <p class="model-note">标准体积流量按理想气体换算到管内平均温度和入口绝压；液体或体积/质量流量可忽略此区。</p>
+              </div>
+            </div>
+
+            <div class="stiffness-results">
+              <div class="result-cards" id="pipeCards"></div>
+              <div class="detail-text" id="pipeSummary">输入管道、流量和物性后自动计算压降。</div>
+              <div class="pipe-diagram" id="pipeDetail" aria-label="管道压降计算示意图"></div>
+            </div>
+          </div>
         </section>
 
         <section class="panel stiffness-panel" aria-label="赫兹接触计算" data-page-section="hertz">
@@ -1667,6 +1764,13 @@
     const stiffnessMatrix = document.querySelector("#stiffnessMatrix");
     const stiffnessOutputUnit = document.querySelector("#stiffnessOutputUnit");
     const dofLabels = ["X", "Y", "Z", "Rx", "Ry", "Rz"];
+    const pipeInputs = Array.from(document.querySelectorAll("[data-pipe]"));
+    const pipeInputMap = Object.fromEntries(pipeInputs.map((input) => [input.dataset.pipe, input]));
+    const pipeDefaults = Object.fromEntries(pipeInputs.map((input) => [input.dataset.pipe, input.value]));
+    const pipeCards = document.querySelector("#pipeCards");
+    const pipeSummary = document.querySelector("#pipeSummary");
+    const pipeDetail = document.querySelector("#pipeDetail");
+    const pipeFlowUnitLabel = document.querySelector("#pipeFlowUnitLabel");
     const hertzInputs = Array.from(document.querySelectorAll("[data-hertz]"));
     const hertzInputMap = Object.fromEntries(hertzInputs.map((input) => [input.dataset.hertz, input]));
     const hertzDefaults = Object.fromEntries(hertzInputs.map((input) => [input.dataset.hertz, input.value]));
@@ -1762,6 +1866,10 @@
 
       if (activePage === "hertz") {
         runHertzCalculation();
+      }
+
+      if (activePage === "pipe") {
+        runPipeCalculation();
       }
 
       if (activePage === "data" && !dataChart.innerHTML) {
@@ -2218,6 +2326,264 @@
         showToast(error.message || "配置导入失败");
       } finally {
         configImportInput.value = "";
+      }
+    }
+
+    function pipeNumber(key, label) {
+      const value = parseValue(pipeInputMap[key].value);
+      if (value === null) {
+        throw new Error(`${label}必须是数字。`);
+      }
+      return value;
+    }
+
+    function pipeViscosityToPaS(value, unit) {
+      if (unit === "PaS") return value;
+      if (unit === "mPaS") return value * 1e-3;
+      return value * 1e-6;
+    }
+
+    function pipeFlowModeText(mode) {
+      if (mode === "mass") return "质量流量";
+      if (mode === "normalVolume") return "标准体积流量";
+      return "体积流量";
+    }
+
+    function updatePipeFlowUnit() {
+      const mode = pipeInputMap.flowMode.value;
+      pipeFlowUnitLabel.textContent = mode === "mass" ? "kg/h" : mode === "normalVolume" ? "Nm³/h" : "m³/h";
+    }
+
+    function collectPipeInput() {
+      return {
+        element: pipeInputMap.element.value,
+        elementName: "直圆管 Kreisrohr",
+        medium: pipeInputMap.medium.value.trim() || "未命名介质",
+        phase: pipeInputMap.phase.value,
+        flowMode: pipeInputMap.flowMode.value,
+        flowValue: pipeNumber("flowValue", "流量数值"),
+        densityKgM3: pipeNumber("density", "密度"),
+        viscosityPaS: pipeViscosityToPaS(pipeNumber("viscosity", "动力黏度"), pipeInputMap.viscosityUnit.value),
+        count: pipeNumber("count", "数量"),
+        diameterM: pipeNumber("diameter", "管径") * 1e-3,
+        lengthM: pipeNumber("length", "管长"),
+        roughnessM: pipeNumber("roughness", "绝对粗糙度") * 1e-3,
+        extraZeta: pipeNumber("extraZeta", "附加局部阻力"),
+        inletPressurePa: pipeNumber("inletPressure", "入口绝压") * 1e5,
+        inletTempK: pipeNumber("inletTemp", "入口温度") + 273.15,
+        outletTempK: pipeNumber("outletTemp", "出口温度") + 273.15
+      };
+    }
+
+    function validatePipeInput(data) {
+      if (data.element !== "circular") throw new Error("当前版本仅实现 pressure-drop.online 的直圆管 Kreisrohr 主计算链路。");
+      if (data.flowValue <= 0) throw new Error("流量必须大于 0。");
+      if (data.densityKgM3 <= 0) throw new Error("密度必须大于 0。");
+      if (data.viscosityPaS <= 0) throw new Error("动力黏度必须大于 0。");
+      if (data.count <= 0) throw new Error("数量必须大于 0。");
+      if (data.diameterM <= 0) throw new Error("管径必须大于 0。");
+      if (data.lengthM < 0) throw new Error("管长不能小于 0。");
+      if (data.roughnessM < 0) throw new Error("绝对粗糙度不能小于 0。");
+      if (data.extraZeta < 0) throw new Error("附加局部阻力 ζ 不能小于 0。");
+      if (data.inletPressurePa <= 0) throw new Error("入口绝压必须大于 0。");
+      if (data.inletTempK <= 0 || data.outletTempK <= 0) throw new Error("温度必须高于绝对零度。");
+    }
+
+    function pipeVolumeFlowM3S(data) {
+      if (data.flowMode === "volume") return data.flowValue / 3600;
+      if (data.flowMode === "mass") return (data.flowValue / 3600) / data.densityKgM3;
+
+      const normalFlowM3S = data.flowValue / 3600;
+      const normalPressurePa = 101325;
+      const normalTempK = 273.15;
+      const averageTempK = (data.inletTempK + data.outletTempK) / 2;
+      return normalFlowM3S * (averageTempK / normalTempK) * (normalPressurePa / data.inletPressurePa);
+    }
+
+    function colebrookFrictionFactor(reynolds, relativeRoughness) {
+      let lambda = 0.25 / Math.log10(relativeRoughness / 3.7 + 5.74 / (reynolds ** 0.9)) ** 2;
+      for (let i = 0; i < 32; i += 1) {
+        const next = 1 / (-2 * Math.log10(relativeRoughness / 3.71 + 2.51 / (reynolds * Math.sqrt(lambda)))) ** 2;
+        if (Math.abs(next - lambda) < 1e-10) return next;
+        lambda = next;
+      }
+      return lambda;
+    }
+
+    function pipeFrictionFactor(reynolds, relativeRoughness) {
+      if (reynolds <= 0) throw new Error("Reynolds 数必须大于 0。");
+      if (reynolds < 2320) return 64 / reynolds;
+      if (reynolds <= 4000) {
+        const laminar = 64 / 2320;
+        const turbulent = colebrookFrictionFactor(4000, relativeRoughness);
+        const ratio = (reynolds - 2320) / (4000 - 2320);
+        return laminar + (turbulent - laminar) * ratio;
+      }
+      return colebrookFrictionFactor(reynolds, relativeRoughness);
+    }
+
+    function pipeFlowState(reynolds) {
+      if (reynolds < 2320) return "层流";
+      if (reynolds <= 4000) return "过渡区";
+      return "湍流";
+    }
+
+    function calculatePipeDrop(data) {
+      validatePipeInput(data);
+      const areaM2 = Math.PI * data.diameterM ** 2 / 4;
+      const volumeFlowM3S = pipeVolumeFlowM3S(data);
+      const velocityMS = volumeFlowM3S / areaM2;
+      const massFlowKgS = data.densityKgM3 * volumeFlowM3S;
+      const reynolds = data.densityKgM3 * velocityMS * data.diameterM / data.viscosityPaS;
+      const relativeRoughness = data.roughnessM / data.diameterM;
+      const lambda = pipeFrictionFactor(reynolds, relativeRoughness);
+      const pipeZeta = lambda * data.lengthM / data.diameterM;
+      const zetaPerElement = pipeZeta + data.extraZeta;
+      const totalZeta = zetaPerElement * data.count;
+      const dynamicPressurePa = data.densityKgM3 * velocityMS ** 2 / 2;
+      const pressureDropPerElementPa = zetaPerElement * dynamicPressurePa;
+      const totalPressureDropPa = pressureDropPerElementPa * data.count;
+      const warnings = [];
+
+      if (pipeFlowState(reynolds) === "过渡区") {
+        warnings.push("Re 位于过渡区，摩擦系数按层流与 Colebrook 湍流结果插值估算。");
+      }
+      if (data.phase === "gas" && totalPressureDropPa / data.inletPressurePa > 0.1) {
+        warnings.push("气体压降超过入口绝压 10%，建议分段或使用可压缩流专门模型复核。");
+      }
+      if (data.flowMode === "normalVolume" && data.phase !== "gas") {
+        warnings.push("标准体积流量通常用于气体；当前仍按理想气体换算体积流量。");
+      }
+
+      return {
+        ...data,
+        areaM2,
+        volumeFlowM3S,
+        massFlowKgS,
+        velocityMS,
+        reynolds,
+        relativeRoughness,
+        lambda,
+        pipeZeta,
+        zetaPerElement,
+        totalZeta,
+        dynamicPressurePa,
+        pressureDropPerElementPa,
+        totalPressureDropPa,
+        flowState: pipeFlowState(reynolds),
+        warnings
+      };
+    }
+
+    function buildPipeDiagram(result) {
+      const lines = [
+        `D：管内径 = ${formatNumber(result.diameterM * 1000)} mm`,
+        `L：单段管长 = ${formatNumber(result.lengthM)} m`,
+        `k：绝对粗糙度 = ${formatNumber(result.roughnessM * 1000)} mm`,
+        `Q：实际体积流量 = ${formatNumber(result.volumeFlowM3S * 3600)} m³/h`,
+        `v：流速 = ${formatNumber(result.velocityMS)} m/s`,
+        `Re：雷诺数 = ${formatNumber(result.reynolds)}`,
+        `λ：Darcy 管摩擦系数 = ${formatNumber(result.lambda)}`,
+        `ζ：λL/D + ζlocal = ${formatNumber(result.zetaPerElement)}`
+      ];
+
+      return `
+        <svg viewBox="0 0 860 430" role="img" aria-label="管道压降计算示意图">
+          <defs>
+            <marker id="pipeArrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="#1a73e8"/>
+            </marker>
+          </defs>
+          <rect x="0" y="0" width="860" height="430" fill="#fff"/>
+          <text x="24" y="38" fill="#202124" font-size="21" font-weight="700">直圆管压降模型</text>
+          <text x="24" y="64" fill="#5f6368" font-size="14">对应 pressure-drop.online / Straight pipes / circular 的核心计算链路</text>
+          <g transform="translate(34 104)">
+            <rect x="32" y="80" width="336" height="92" rx="46" fill="#e8f0fe" stroke="#1a73e8" stroke-width="3"/>
+            <line x1="48" y1="126" x2="352" y2="126" stroke="#1a73e8" stroke-width="3" marker-end="url(#pipeArrow)"/>
+            <text x="166" y="112" fill="#1a73e8" font-size="16" font-weight="700">Q, v</text>
+            <line x1="32" y1="210" x2="368" y2="210" stroke="#5f6368" stroke-width="2"/>
+            <line x1="32" y1="198" x2="32" y2="222" stroke="#5f6368" stroke-width="2"/>
+            <line x1="368" y1="198" x2="368" y2="222" stroke="#5f6368" stroke-width="2"/>
+            <text x="188" y="238" fill="#5f6368" font-size="15">L</text>
+            <line x1="392" y1="80" x2="392" y2="172" stroke="#188038" stroke-width="2"/>
+            <line x1="380" y1="80" x2="404" y2="80" stroke="#188038" stroke-width="2"/>
+            <line x1="380" y1="172" x2="404" y2="172" stroke="#188038" stroke-width="2"/>
+            <text x="408" y="132" fill="#188038" font-size="15">D</text>
+            <text x="48" y="62" fill="#d93025" font-size="15">粗糙度 k 影响 λ</text>
+            <text x="48" y="276" fill="#202124" font-size="14">Δp = ζ · ρv² / 2，ζ = λL/D + ζlocal</text>
+          </g>
+          <rect x="472" y="82" width="336" height="292" rx="8" fill="#f8fafd" stroke="#dadce0"/>
+          <text x="494" y="112" fill="#202124" font-size="16" font-weight="700">参数与结果说明</text>
+          ${svgTextLines(lines, 494, 142)}
+          <text x="494" y="348" fill="#5f6368" font-size="13">湍流 λ 使用 Prandtl-Colebrook 隐式公式迭代求解。</text>
+        </svg>
+      `;
+    }
+
+    function buildPipeText(result) {
+      const warningText = result.warnings.length ? `\n提示: ${result.warnings.join(" ")}` : "";
+      return [
+        "管道压降计算结果",
+        `管道元件: ${result.elementName}`,
+        `介质: ${result.medium} (${result.phase === "gas" ? "气体" : "液体"})`,
+        `流量类型: ${pipeFlowModeText(result.flowMode)}; 输入值: ${formatNumber(result.flowValue)}`,
+        `实际体积流量 Q: ${formatNumber(result.volumeFlowM3S * 3600)} m3/h`,
+        `质量流量 m: ${formatNumber(result.massFlowKgS * 3600)} kg/h`,
+        `流速 v: ${formatNumber(result.velocityMS)} m/s`,
+        `Reynolds 数: ${formatNumber(result.reynolds)} (${result.flowState})`,
+        `相对粗糙度 k/D: ${formatNumber(result.relativeRoughness)}`,
+        `Darcy 管摩擦系数 λ: ${formatNumber(result.lambda)}`,
+        `单段 ζ: ${formatNumber(result.zetaPerElement)}; 总 ζ: ${formatNumber(result.totalZeta)}`,
+        `单段压降: ${formatNumber(result.pressureDropPerElementPa / 1000)} kPa`,
+        `总压降: ${formatNumber(result.totalPressureDropPa / 1000)} kPa = ${formatNumber(result.totalPressureDropPa / 100000)} bar`,
+        "方法: 层流 λ=64/Re；湍流 λ 使用 Prandtl-Colebrook；Δp=ζρv²/2。"
+      ].join("\n") + warningText;
+    }
+
+    function renderPipeResult(result) {
+      const cards = [
+        ["总压降", formatNumber(result.totalPressureDropPa / 100000), "bar"],
+        ["单段压降", formatNumber(result.pressureDropPerElementPa / 1000), "kPa"],
+        ["流速", formatNumber(result.velocityMS), "m/s"],
+        ["Reynolds 数", formatNumber(result.reynolds), result.flowState],
+        ["管摩擦系数 λ", formatNumber(result.lambda), "Darcy"],
+        ["总阻力系数 ζ", formatNumber(result.totalZeta), "-"]
+      ];
+
+      pipeCards.innerHTML = "";
+      cards.forEach(([title, value, unit]) => {
+        const card = document.createElement("div");
+        card.className = "result-card";
+        card.innerHTML = `<span>${escapeHtml(title)}</span><strong>${escapeHtml(value)}</strong><span>${escapeHtml(unit)}</span>`;
+        pipeCards.append(card);
+      });
+
+      const warnings = result.warnings.length
+        ? `<div class="summary-line">提示：${escapeHtml(result.warnings.join(" "))}</div>`
+        : "";
+      pipeSummary.innerHTML = `
+        <div class="strength-summary">
+          <div class="summary-line">模型：${escapeHtml(result.elementName)}。Δp = ${escapeHtml(formatNumber(result.totalPressureDropPa / 100000))} bar，λ = ${escapeHtml(formatNumber(result.lambda))}，ζ = ${escapeHtml(formatNumber(result.totalZeta))}</div>
+          <div class="summary-line">计算链路：Q → v → Re → λ → ζ → Δp；湍流区使用 Prandtl-Colebrook，层流区使用 64/Re。</div>
+          ${warnings}
+        </div>
+      `;
+      pipeDetail.innerHTML = buildPipeDiagram(result);
+      window.lastPipeText = buildPipeText(result);
+    }
+
+    function runPipeCalculation() {
+      try {
+        updatePipeFlowUnit();
+        const result = calculatePipeDrop(collectPipeInput());
+        renderPipeResult(result);
+        return result;
+      } catch (error) {
+        pipeCards.innerHTML = "";
+        pipeSummary.textContent = error.message;
+        pipeDetail.innerHTML = `<svg viewBox="0 0 760 220" role="img" aria-label="参数错误"><rect width="760" height="220" fill="#fff"/><text x="28" y="70" fill="#d93025" font-size="20" font-weight="700">参数错误</text><text x="28" y="108" fill="#5f6368" font-size="15">${escapeHtml(error.message)}</text></svg>`;
+        window.lastPipeText = "";
+        return null;
       }
     }
 
@@ -4398,6 +4764,29 @@
 
     hertzModel.addEventListener("change", updateHertzModelUi);
 
+    pipeInputs.forEach((input) => {
+      input.addEventListener("change", runPipeCalculation);
+      input.addEventListener("input", () => {
+        if (input.dataset.pipe === "flowMode") updatePipeFlowUnit();
+      });
+    });
+
+    document.querySelector("#copyPipeStats").addEventListener("click", () => {
+      if (!window.lastPipeText) {
+        runPipeCalculation();
+      }
+      copyText(window.lastPipeText || "");
+    });
+
+    document.querySelector("#resetPipe").addEventListener("click", () => {
+      Object.entries(pipeDefaults).forEach(([key, value]) => {
+        pipeInputMap[key].value = value;
+      });
+      updatePipeFlowUnit();
+      runPipeCalculation();
+      showToast("管道参数已重置");
+    });
+
     dataFileInput.addEventListener("change", () => {
       const [file] = dataFileInput.files;
       if (file) {
@@ -4493,6 +4882,8 @@
     updateConversion();
     renderEmptyDataChart();
     renderEmptySurfacePlots();
+    updatePipeFlowUnit();
+    runPipeCalculation();
     updateHertzModelUi(false);
     runHertzCalculation();
     runStiffnessCalculation();
