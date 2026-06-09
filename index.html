@@ -1426,7 +1426,19 @@
 
               <div class="input-section">
                 <h3>流体与流量</h3>
-                <label class="calc-field">介质名称 <input data-pipe="medium" value="Water 20°C"><span class="calc-unit">-</span></label>
+                <label class="calc-field">
+                  <span>材质</span>
+                  <select data-pipe="mediumPreset" aria-label="介质材质">
+                    <option value="water20">水 Water</option>
+                    <option value="air20">空气 Air</option>
+                    <option value="hydraulicOil40">液压油 Hydraulic oil</option>
+                    <option value="ethyleneGlycol20">乙二醇 Ethylene glycol</option>
+                    <option value="custom">自定义</option>
+                  </select>
+                  <span class="calc-unit">-</span>
+                </label>
+                <label class="calc-field"><span>材质数值</span><input data-pipe="medium" value="Water" aria-label="介质名称或牌号"><span class="calc-unit">-</span></label>
+                <label class="calc-field"><span>温度</span><input data-pipe="mediumTemp" value="20" inputmode="decimal"><span class="calc-unit">°C</span></label>
                 <label class="calc-field">
                   <span>状态</span>
                   <select data-pipe="phase" aria-label="流体状态">
@@ -2914,6 +2926,58 @@
       return pipeInputMap[key]?.selectedOptions?.[0]?.textContent || "";
     }
 
+    const pipeMediumPresets = {
+      water20: {
+        name: "Water",
+        phase: "liquid",
+        tempC: 20,
+        density: 998.206,
+        densityUnit: "kg_m3",
+        viscosity: 1001.605,
+        viscosityUnit: "uPaS"
+      },
+      air20: {
+        name: "Air",
+        phase: "gas",
+        tempC: 20,
+        density: 1.204,
+        densityUnit: "kg_m3",
+        viscosity: 18.15,
+        viscosityUnit: "uPaS"
+      },
+      hydraulicOil40: {
+        name: "Hydraulic oil",
+        phase: "liquid",
+        tempC: 40,
+        density: 870,
+        densityUnit: "kg_m3",
+        viscosity: 32,
+        viscosityUnit: "mPaS"
+      },
+      ethyleneGlycol20: {
+        name: "Ethylene glycol",
+        phase: "liquid",
+        tempC: 20,
+        density: 1113,
+        densityUnit: "kg_m3",
+        viscosity: 16.1,
+        viscosityUnit: "mPaS"
+      }
+    };
+
+    function applyPipeMediumPreset() {
+      const preset = pipeMediumPresets[pipeInputMap.mediumPreset.value];
+      if (!preset) return;
+
+      pipeInputMap.medium.value = preset.name;
+      pipeInputMap.mediumTemp.value = String(preset.tempC);
+      pipeInputMap.phase.value = preset.phase;
+      pipeInputMap.density.value = String(preset.density);
+      pipeInputMap.densityUnit.value = preset.densityUnit;
+      pipeInputMap.viscosity.value = String(preset.viscosity);
+      pipeInputMap.viscosityUnit.value = preset.viscosityUnit;
+    }
+
     function pipeFlowModeText(mode) {
       if (mode === "mass") return "质量流量";
       if (mode === "normalVolume") return "标准体积流量";
@@ -2961,7 +3025,8 @@
         element: pipeInputMap.element.value,
         elementName: elementDef.name,
         elementDef,
-        medium: pipeInputMap.medium.value.trim() || "未命名介质",
+        medium: `${pipeInputMap.medium.value.trim() || "未命名介质"} ${pipeNumber("mediumTemp", "温度")}°C`,
+        mediumTempC: pipeNumber("mediumTemp", "温度"),
         phase: pipeInputMap.phase.value,
         flowMode: pipeInputMap.flowMode.value,
         flowValue: pipeNumber("flowValue", "流量数值"),
@@ -5509,8 +5574,18 @@
     hertzModel.addEventListener("change", updateHertzModelUi);
 
     pipeInputs.forEach((input) => {
-      input.addEventListener("change", runPipeCalculation);
+      input.addEventListener("change", () => {
+        if (input.dataset.pipe === "mediumPreset") {
+          applyPipeMediumPreset();
+        } else if (["medium", "mediumTemp", "phase", "density", "densityUnit", "viscosity", "viscosityUnit"].includes(input.dataset.pipe)) {
+          pipeInputMap.mediumPreset.value = "custom";
+        }
+        runPipeCalculation();
+      });
       input.addEventListener("input", () => {
+        if (["medium", "mediumTemp", "density", "viscosity"].includes(input.dataset.pipe)) {
+          pipeInputMap.mediumPreset.value = "custom";
+        }
         if (input.dataset.pipe === "phase" || input.dataset.pipe === "flowMode") {
           updatePipeGasCorrectionUi();
           updatePipeFlowUnit();
@@ -5531,6 +5606,7 @@
       Object.entries(pipeDefaults).forEach(([key, value]) => {
         pipeInputMap[key].value = value;
       });
+      applyPipeMediumPreset();
       updatePipeGasCorrectionUi();
       updatePipeFlowUnit();
       pipeDiameterSolveStatus.textContent = "按当前流量、物性和管道元件参数，求使总压降接近目标值的管径 D。";
@@ -5633,6 +5709,7 @@
     updateConversion();
     renderEmptyDataChart();
     renderEmptySurfacePlots();
+    applyPipeMediumPreset();
     updatePipeFlowUnit();
     runPipeCalculation();
     updateHertzModelUi(false);
