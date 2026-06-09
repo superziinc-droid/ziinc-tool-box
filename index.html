@@ -1000,6 +1000,17 @@
       line-height: 1.5;
     }
 
+    .input-section.is-disabled {
+      background: #f8fafd;
+      opacity: .62;
+    }
+
+    .input-section.is-disabled input,
+    .input-section.is-disabled select {
+      cursor: not-allowed;
+      color: var(--muted);
+    }
+
     .field-hidden {
       display: none !important;
     }
@@ -1429,7 +1440,7 @@
                   <select data-pipe="flowMode" aria-label="流量类型">
                     <option value="volume">体积流量</option>
                     <option value="mass">质量流量</option>
-                    <option value="normalVolume">标准体积流量</option>
+                    <option value="normalVolume" id="pipeNormalVolumeOption">标准体积流量</option>
                   </select>
                   <span class="calc-unit">-</span>
                 </label>
@@ -1446,12 +1457,12 @@
                 </label>
               </div>
 
-              <div class="input-section">
+              <div class="input-section" id="pipeGasCorrectionSection">
                 <h3>气体修正</h3>
                 <label class="calc-field">入口绝压 <input data-pipe="inletPressure" value="1.01325" inputmode="decimal"><span class="calc-unit">bar(a)</span></label>
                 <label class="calc-field">入口温度 <input data-pipe="inletTemp" value="20" inputmode="decimal"><span class="calc-unit">°C</span></label>
                 <label class="calc-field">出口温度 <input data-pipe="outletTemp" value="20" inputmode="decimal"><span class="calc-unit">°C</span></label>
-                <p class="model-note">标准体积流量按理想气体换算到管内平均温度和入口绝压；液体或体积/质量流量可忽略此区。</p>
+                <p class="model-note" id="pipeGasCorrectionNote">标准体积流量按理想气体换算到管内平均温度和入口绝压；液体或体积/质量流量可忽略此区。</p>
               </div>
 
               <div class="input-section">
@@ -1963,6 +1974,9 @@
     const pipeExtraZetaLabel = document.querySelector("#pipeExtraZetaLabel");
     const pipeDiameterSolveStatus = document.querySelector("#pipeDiameterSolveStatus");
     const solvePipeDiameterButton = document.querySelector("#solvePipeDiameter");
+    const pipeGasCorrectionSection = document.querySelector("#pipeGasCorrectionSection");
+    const pipeGasCorrectionNote = document.querySelector("#pipeGasCorrectionNote");
+    const pipeNormalVolumeOption = document.querySelector("#pipeNormalVolumeOption");
     const hertzInputs = Array.from(document.querySelectorAll("[data-hertz]"));
     const hertzInputMap = Object.fromEntries(hertzInputs.map((input) => [input.dataset.hertz, input]));
     const hertzDefaults = Object.fromEntries(hertzInputs.map((input) => [input.dataset.hertz, input.value]));
@@ -2850,6 +2864,24 @@
       pipeFlowUnitLabel.textContent = mode === "mass" ? "kg/h" : mode === "normalVolume" ? "Nm³/h" : "m³/h";
     }
 
+    function updatePipeGasCorrectionUi() {
+      const isGas = pipeInputMap.phase.value === "gas";
+      pipeNormalVolumeOption.disabled = !isGas;
+      if (!isGas && pipeInputMap.flowMode.value === "normalVolume") {
+        pipeInputMap.flowMode.value = "volume";
+      }
+
+      const gasCorrectionActive = isGas && pipeInputMap.flowMode.value === "normalVolume";
+      pipeGasCorrectionSection.classList.toggle("is-disabled", !gasCorrectionActive);
+      pipeGasCorrectionSection.setAttribute("aria-disabled", String(!gasCorrectionActive));
+      ["inletPressure", "inletTemp", "outletTemp"].forEach((key) => {
+        pipeInputMap[key].disabled = !gasCorrectionActive;
+      });
+      pipeGasCorrectionNote.textContent = gasCorrectionActive
+        ? "当前模型启用气体标准体积流量修正：按理想气体换算到管内平均温度和入口绝压。"
+        : "当前流体状态或流量类型不使用气体修正，此区已禁用。";
+    }
+
     function currentPipeElement() {
       return pipeElementCatalog[pipeInputMap.element.value] || pipeElementCatalog.circular;
     }
@@ -3079,6 +3111,7 @@
     function runPipeDiameterSolve() {
       try {
         updatePipeElementUi();
+        updatePipeGasCorrectionUi();
         updatePipeFlowUnit();
         const targetPressureDropPa = pipeTargetPressureDropPa();
         const solution = solvePipeDiameterForTarget(targetPressureDropPa);
@@ -3212,6 +3245,7 @@
     function runPipeCalculation() {
       try {
         updatePipeElementUi();
+        updatePipeGasCorrectionUi();
         updatePipeFlowUnit();
         const result = calculatePipeDrop(collectPipeInput());
         renderPipeResult(result);
@@ -5405,7 +5439,12 @@
     pipeInputs.forEach((input) => {
       input.addEventListener("change", runPipeCalculation);
       input.addEventListener("input", () => {
-        if (input.dataset.pipe === "flowMode") updatePipeFlowUnit();
+        if (input.dataset.pipe === "phase" || input.dataset.pipe === "flowMode") {
+          updatePipeGasCorrectionUi();
+        }
+        if (input.dataset.pipe === "flowMode") {
+          updatePipeFlowUnit();
+        }
       });
     });
 
@@ -5422,6 +5461,7 @@
       Object.entries(pipeDefaults).forEach(([key, value]) => {
         pipeInputMap[key].value = value;
       });
+      updatePipeGasCorrectionUi();
       updatePipeFlowUnit();
       pipeDiameterSolveStatus.textContent = "按当前流量、物性和管道元件参数，求使总压降接近目标值的管径 D。";
       runPipeCalculation();
