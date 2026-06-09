@@ -1407,7 +1407,7 @@
                 <label class="calc-field">数量 <input data-pipe="count" value="1" inputmode="decimal"><span class="calc-unit">段</span></label>
                 <label class="calc-field" id="pipeDiameterField"><span id="pipeDiameterLabel">管径 D</span><input data-pipe="diameter" value="100" inputmode="decimal"><span class="calc-unit">mm</span></label>
                 <label class="calc-field field-hidden" id="pipeSecondDiameterField"><span id="pipeSecondDiameterLabel">第二管径 D2</span><input data-pipe="secondDiameter" value="160" inputmode="decimal"><span class="calc-unit">mm</span></label>
-                <label class="calc-field" id="pipeLengthField"><span id="pipeLengthLabel">管长 L</span><input data-pipe="length" value="1" inputmode="decimal"><span class="calc-unit">m</span></label>
+                <label class="calc-field" id="pipeLengthField"><span id="pipeLengthLabel">管长 L</span><input data-pipe="length" value="1000" inputmode="decimal"><span class="calc-unit">mm</span></label>
                 <label class="calc-field" id="pipeRoughnessField"><span id="pipeRoughnessLabel">绝对粗糙度 k</span><input data-pipe="roughness" value="0.10" inputmode="decimal"><span class="calc-unit">mm</span></label>
                 <label class="calc-field field-hidden" id="pipeAngleField"><span id="pipeAngleLabel">角度 α</span><input data-pipe="angle" value="90" inputmode="decimal"><span class="calc-unit">deg</span></label>
                 <label class="calc-field field-hidden" id="pipeRadiusRatioField"><span id="pipeRadiusRatioLabel">弯曲半径 R/D</span><input data-pipe="radiusRatio" value="1.5" inputmode="decimal"><span class="calc-unit">-</span></label>
@@ -3039,7 +3039,7 @@
         count: pipeNumber("count", "数量"),
         diameterM: pipeNumber("diameter", "管径") * 1e-3,
         secondDiameterM: pipeNumber("secondDiameter", "第二管径") * 1e-3,
-        lengthM: pipeNumber("length", "管长"),
+        lengthM: pipeNumber("length", "管长") * 1e-3,
         roughnessM: pipeNumber("roughness", "绝对粗糙度") * 1e-3,
         angleDeg: pipeNumber("angle", "角度"),
         radiusRatio: pipeNumber("radiusRatio", "弯曲半径 R/D"),
