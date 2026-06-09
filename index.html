@@ -592,7 +592,7 @@
 
     .calc-field {
       display: grid;
-      grid-template-columns: minmax(118px, 1fr) minmax(92px, 128px) 54px;
+      grid-template-columns: minmax(118px, 1fr) minmax(92px, 128px) minmax(76px, 96px);
       gap: 8px;
       align-items: center;
       margin-top: 8px;
@@ -1444,8 +1444,26 @@
                   </select>
                   <span class="calc-unit">-</span>
                 </label>
-                <label class="calc-field">流量数值 <input data-pipe="flowValue" value="100" inputmode="decimal"><span class="calc-unit" id="pipeFlowUnitLabel">m³/h</span></label>
-                <label class="calc-field">密度 ρ <input data-pipe="density" value="998.206" inputmode="decimal"><span class="calc-unit">kg/m³</span></label>
+                <label class="calc-field">
+                  <span>流量数值</span>
+                  <input data-pipe="flowValue" value="100" inputmode="decimal">
+                  <select data-pipe="flowUnit" id="pipeFlowUnit" aria-label="流量单位">
+                    <option value="m3h">m³/h</option>
+                    <option value="m3s">m³/s</option>
+                    <option value="lmin">L/min</option>
+                    <option value="ls">L/s</option>
+                  </select>
+                </label>
+                <label class="calc-field">
+                  <span>密度 ρ</span>
+                  <input data-pipe="density" value="998.206" inputmode="decimal">
+                  <select data-pipe="densityUnit" aria-label="密度单位">
+                    <option value="kg_m3">kg/m³</option>
+                    <option value="g_cm3">g/cm³</option>
+                    <option value="kg_l">kg/L</option>
+                    <option value="lb_ft3">lb/ft³</option>
+                  </select>
+                </label>
                 <label class="calc-field">
                   <span>动力黏度 μ</span>
                   <input data-pipe="viscosity" value="1001.605" inputmode="decimal">
@@ -1961,7 +1979,6 @@
     const pipeCards = document.querySelector("#pipeCards");
     const pipeSummary = document.querySelector("#pipeSummary");
     const pipeDetail = document.querySelector("#pipeDetail");
-    const pipeFlowUnitLabel = document.querySelector("#pipeFlowUnitLabel");
     const pipeElementNote = document.querySelector("#pipeElementNote");
     const pipeSecondDiameterField = document.querySelector("#pipeSecondDiameterField");
     const pipeLengthField = document.querySelector("#pipeLengthField");
@@ -2853,6 +2870,50 @@
       return value * 1e-6;
     }
 
+    const pipeFlowUnitsByMode = {
+      volume: [
+        { value: "m3h", label: "m³/h" },
+        { value: "m3s", label: "m³/s" },
+        { value: "lmin", label: "L/min" },
+        { value: "ls", label: "L/s" }
+      ],
+      mass: [
+        { value: "kgh", label: "kg/h" },
+        { value: "kgs", label: "kg/s" },
+        { value: "gs", label: "g/s" },
+        { value: "th", label: "t/h" }
+      ],
+      normalVolume: [
+        { value: "nm3h", label: "Nm³/h" },
+        { value: "nm3min", label: "Nm³/min" },
+        { value: "nm3s", label: "Nm³/s" }
+      ]
+    };
+
+    function pipeDensityToKgM3(value, unit) {
+      if (unit === "g_cm3" || unit === "kg_l") return value * 1000;
+      if (unit === "lb_ft3") return value * 16.01846337396;
+      return value;
+    }
+
+    function pipeFlowValueToM3S(value, unit) {
+      if (unit === "m3s") return value;
+      if (unit === "lmin") return value * 1e-3 / 60;
+      if (unit === "ls") return value * 1e-3;
+      return value / 3600;
+    }
+
+    function pipeMassFlowValueToKgS(value, unit) {
+      if (unit === "kgs") return value;
+      if (unit === "gs") return value * 1e-3;
+      if (unit === "th") return value * 1000 / 3600;
+      return value / 3600;
+    }
+
+    function pipeUnitLabel(key) {
+      return pipeInputMap[key]?.selectedOptions?.[0]?.textContent || "";
+    }
+
     function pipeFlowModeText(mode) {
       if (mode === "mass") return "质量流量";
       if (mode === "normalVolume") return "标准体积流量";
@@ -2861,7 +2922,15 @@
 
     function updatePipeFlowUnit() {
       const mode = pipeInputMap.flowMode.value;
-      pipeFlowUnitLabel.textContent = mode === "mass" ? "kg/h" : mode === "normalVolume" ? "Nm³/h" : "m³/h";
+      const flowUnitSelect = pipeInputMap.flowUnit;
+      const units = pipeFlowUnitsByMode[mode] || pipeFlowUnitsByMode.volume;
+      const currentValue = flowUnitSelect.value;
+      flowUnitSelect.innerHTML = units
+        .map((unit) => `<option value="${unit.value}">${unit.label}</option>`)
+        .join("");
+      flowUnitSelect.value = units.some((unit) => unit.value === currentValue)
+        ? currentValue
+        : units[0].value;
     }
 
     function updatePipeGasCorrectionUi() {
@@ -2896,7 +2965,9 @@
         phase: pipeInputMap.phase.value,
         flowMode: pipeInputMap.flowMode.value,
         flowValue: pipeNumber("flowValue", "流量数值"),
-        densityKgM3: pipeNumber("density", "密度"),
+        flowUnit: pipeInputMap.flowUnit.value,
+        densityKgM3: pipeDensityToKgM3(pipeNumber("density", "密度"), pipeInputMap.densityUnit.value),
+        densityUnit: pipeInputMap.densityUnit.value,
         viscosityPaS: pipeViscosityToPaS(pipeNumber("viscosity", "动力黏度"), pipeInputMap.viscosityUnit.value),
         count: pipeNumber("count", "数量"),
         diameterM: pipeNumber("diameter", "管径") * 1e-3,
@@ -2931,10 +3002,10 @@
     }
 
     function pipeVolumeFlowM3S(data) {
-      if (data.flowMode === "volume") return data.flowValue / 3600;
-      if (data.flowMode === "mass") return (data.flowValue / 3600) / data.densityKgM3;
+      if (data.flowMode === "volume") return pipeFlowValueToM3S(data.flowValue, data.flowUnit);
+      if (data.flowMode === "mass") return pipeMassFlowValueToKgS(data.flowValue, data.flowUnit) / data.densityKgM3;
 
-      const normalFlowM3S = data.flowValue / 3600;
+      const normalFlowM3S = pipeFlowValueToM3S(data.flowValue, data.flowUnit);
       const normalPressurePa = 101325;
       const normalTempK = 273.15;
       const averageTempK = (data.inletTempK + data.outletTempK) / 2;
@@ -3171,7 +3242,8 @@
         "管道压降计算结果",
         `管道元件: ${result.elementName}`,
         `介质: ${result.medium} (${result.phase === "gas" ? "气体" : "液体"})`,
-        `流量类型: ${pipeFlowModeText(result.flowMode)}; 输入值: ${formatNumber(result.flowValue)}`,
+        `流量类型: ${pipeFlowModeText(result.flowMode)}; 输入值: ${formatNumber(result.flowValue)} ${pipeUnitLabel("flowUnit")}`,
+        `密度 ρ: ${formatNumber(result.densityKgM3)} kg/m3`,
         `实际体积流量 Q: ${formatNumber(result.volumeFlowM3S * 3600)} m3/h`,
         `质量流量 m: ${formatNumber(result.massFlowKgS * 3600)} kg/h`,
         `流速 v: ${formatNumber(result.velocityMS)} m/s`,
@@ -5441,8 +5513,6 @@
       input.addEventListener("input", () => {
         if (input.dataset.pipe === "phase" || input.dataset.pipe === "flowMode") {
           updatePipeGasCorrectionUi();
-        }
-        if (input.dataset.pipe === "flowMode") {
           updatePipeFlowUnit();
         }
       });
