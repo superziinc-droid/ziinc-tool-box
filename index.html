@@ -1429,7 +1429,6 @@
                   </select>
                   <span class="calc-unit">-</span>
                 </label>
-                <label class="calc-field"><span>材质数值</span><input data-pipe="medium" value="Water" aria-label="介质名称或牌号"><span class="calc-unit">-</span></label>
                 <label class="calc-field"><span>温度</span><input data-pipe="mediumTemp" value="20" inputmode="decimal"><span class="calc-unit">°C</span></label>
                 <label class="calc-field">
                   <span>状态</span>
@@ -2971,13 +2970,18 @@
       const preset = pipeMediumPresets[pipeInputMap.mediumPreset.value];
       if (!preset) return;
 
-      pipeInputMap.medium.value = preset.name;
       pipeInputMap.mediumTemp.value = String(preset.tempC);
       pipeInputMap.phase.value = preset.phase;
       pipeInputMap.density.value = String(preset.density);
       pipeInputMap.densityUnit.value = preset.densityUnit;
       pipeInputMap.viscosity.value = String(preset.viscosity);
       pipeInputMap.viscosityUnit.value = preset.viscosityUnit;
+    }
+
+    function pipeMediumName() {
+      const preset = pipeMediumPresets[pipeInputMap.mediumPreset.value];
+      if (preset) return preset.name;
+      return pipeInputMap.mediumPreset.selectedOptions?.[0]?.textContent?.trim() || "自定义介质";
     }
 
     function pipeFlowModeText(mode) {
@@ -3027,7 +3031,7 @@
         element: pipeInputMap.element.value,
         elementName: elementDef.name,
         elementDef,
-        medium: `${pipeInputMap.medium.value.trim() || "未命名介质"} ${pipeNumber("mediumTemp", "温度")}°C`,
+        medium: `${pipeMediumName()} ${pipeNumber("mediumTemp", "温度")}°C`,
         mediumTempC: pipeNumber("mediumTemp", "温度"),
         phase: pipeInputMap.phase.value,
         flowMode: pipeInputMap.flowMode.value,
@@ -5593,13 +5597,13 @@
       input.addEventListener("change", () => {
         if (input.dataset.pipe === "mediumPreset") {
           applyPipeMediumPreset();
-        } else if (["medium", "mediumTemp", "phase", "density", "densityUnit", "viscosity", "viscosityUnit"].includes(input.dataset.pipe)) {
+        } else if (["mediumTemp", "phase", "density", "densityUnit", "viscosity", "viscosityUnit"].includes(input.dataset.pipe)) {
           pipeInputMap.mediumPreset.value = "custom";
         }
         runPipeCalculation();
       });
       input.addEventListener("input", () => {
-        if (["medium", "mediumTemp", "density", "viscosity"].includes(input.dataset.pipe)) {
+        if (["mediumTemp", "density", "viscosity"].includes(input.dataset.pipe)) {
           pipeInputMap.mediumPreset.value = "custom";
         }
         if (input.dataset.pipe === "phase" || input.dataset.pipe === "flowMode") {
