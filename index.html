@@ -1505,6 +1505,17 @@
             </div>
 
             <div class="stiffness-results">
+              <label class="calc-field">
+                <span>结果压力单位</span>
+                <select data-pipe="resultPressureUnit" aria-label="结果压力单位">
+                  <option value="bar">bar</option>
+                  <option value="kPa">kPa</option>
+                  <option value="Pa">Pa</option>
+                  <option value="MPa">MPa</option>
+                  <option value="psi">psi</option>
+                </select>
+                <span class="calc-unit">-</span>
+              </label>
               <div class="result-cards" id="pipeCards"></div>
               <div class="detail-text" id="pipeSummary">输入管道、流量和物性后自动计算压降。</div>
               <div class="pipe-diagram" id="pipeDetail" aria-label="管道压降计算示意图"></div>
@@ -3154,7 +3165,20 @@
       if (unit === "MPa") return value * 1e6;
       if (unit === "bar") return value * 1e5;
       if (unit === "kPa") return value * 1e3;
+      if (unit === "psi") return value * 6894.757293168;
       return value;
+    }
+
+    function pipePressurePaToUnit(valuePa, unit) {
+      return valuePa / pipePressureUnitToPa(1, unit);
+    }
+
+    function pipeResultPressureUnit() {
+      return pipeInputMap.resultPressureUnit?.value || "bar";
+    }
+
+    function pipeFormatPressure(valuePa, unit = pipeResultPressureUnit()) {
+      return `${formatNumber(pipePressurePaToUnit(valuePa, unit))} ${unit}`;
     }
 
     function pipeTargetPressureDropPa() {
@@ -3210,7 +3234,7 @@
 
       if (!interval) {
         if (!best) throw new Error("当前参数无法进行内径反推。");
-        throw new Error(`0.1~5000 mm 范围内未找到满足目标压降的内径；最接近值为 D=${formatNumber(best.diameterMm)} mm，Δp=${formatNumber(best.result.totalPressureDropPa / 100000)} bar。`);
+        throw new Error(`0.1~5000 mm 范围内未找到满足目标压降的内径；最接近值为 D=${formatNumber(best.diameterMm)} mm，Δp=${pipeFormatPressure(best.result.totalPressureDropPa)}。`);
       }
 
       let low = interval.low;
@@ -3245,8 +3269,8 @@
         pipeInputMap.diameter.value = formatNumber(solution.diameterMm);
         const result = calculatePipeDrop(collectPipeInput());
         renderPipeResult(result);
-        const targetText = `${formatNumber(targetPressureDropPa / 100000)} bar`;
-        const solvedText = `反推结果：D = ${formatNumber(solution.diameterMm)} mm，总压降 = ${formatNumber(result.totalPressureDropPa / 100000)} bar。`;
+        const targetText = pipeFormatPressure(targetPressureDropPa);
+        const solvedText = `反推结果：D = ${formatNumber(solution.diameterMm)} mm，总压降 = ${pipeFormatPressure(result.totalPressureDropPa)}。`;
         pipeDiameterSolveStatus.textContent = `${solvedText} 目标总压降 ${targetText}。`;
         window.lastPipeText = `${window.lastPipeText || buildPipeText(result)}\n\n内径反推\n目标总压降: ${targetText}\n${solvedText}`;
         showToast("内径反推完成");
@@ -3308,16 +3332,17 @@
         `Darcy 管摩擦系数 λ: ${formatNumber(result.lambda)}`,
         `局部/沿程模型: ${result.zetaMethod}`,
         `元件 ζ: ${formatNumber(result.localZeta)}; 单段总 ζ: ${formatNumber(result.zetaPerElement)}; 多段总 ζ: ${formatNumber(result.totalZeta)}`,
-        `单段压降: ${formatNumber(result.pressureDropPerElementPa / 1000)} kPa`,
-        `总压降: ${formatNumber(result.totalPressureDropPa / 1000)} kPa = ${formatNumber(result.totalPressureDropPa / 100000)} bar`,
+        `单段压降: ${pipeFormatPressure(result.pressureDropPerElementPa)}`,
+        `总压降: ${pipeFormatPressure(result.totalPressureDropPa)}`,
         "方法: 层流 λ=64/Re；湍流 λ 使用 Prandtl-Colebrook；Δp=ζρv²/2。"
       ].join("\n") + warningText;
     }
 
     function renderPipeResult(result) {
+      const pressureUnit = pipeResultPressureUnit();
       const cards = [
-        ["总压降", formatNumber(result.totalPressureDropPa / 100000), "bar"],
-        ["单段压降", formatNumber(result.pressureDropPerElementPa / 1000), "kPa"],
+        ["总压降", formatNumber(pipePressurePaToUnit(result.totalPressureDropPa, pressureUnit)), pressureUnit],
+        ["单段压降", formatNumber(pipePressurePaToUnit(result.pressureDropPerElementPa, pressureUnit)), pressureUnit],
         ["流速", formatNumber(result.velocityMS), "m/s"],
         ["Reynolds 数", formatNumber(result.reynolds), result.flowState],
         ["管摩擦系数 λ", formatNumber(result.lambda), "Darcy"],
@@ -3337,7 +3362,7 @@
         : "";
       pipeSummary.innerHTML = `
         <div class="strength-summary">
-          <div class="summary-line">模型：${escapeHtml(result.elementName)}。Δp = ${escapeHtml(formatNumber(result.totalPressureDropPa / 100000))} bar，λ = ${escapeHtml(formatNumber(result.lambda))}，ζ = ${escapeHtml(formatNumber(result.totalZeta))}</div>
+          <div class="summary-line">模型：${escapeHtml(result.elementName)}。Δp = ${escapeHtml(pipeFormatPressure(result.totalPressureDropPa, pressureUnit))}，λ = ${escapeHtml(formatNumber(result.lambda))}，ζ = ${escapeHtml(formatNumber(result.totalZeta))}</div>
           <div class="summary-line">ζ模型：${escapeHtml(result.zetaMethod)}；计算链路：Q → v → Re → λ/ζ → Δp。</div>
           <div class="summary-line">说明：湍流 λ 使用 Prandtl-Colebrook，层流 λ 使用 64/Re；局部元件按常用工程 ζ 估算。</div>
           ${warnings}
