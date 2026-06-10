@@ -613,23 +613,25 @@
       letter-spacing: 0;
     }
 
-    .pipe-element-layout {
-      display: grid;
-      grid-template-columns: minmax(210px, 0.95fr) minmax(0, 1.25fr);
-      gap: 14px;
-      align-items: start;
+    .stiffness-panel[data-page-section="pipe"] .stiffness-grid {
+      grid-template-columns: minmax(340px, .82fr) minmax(0, 1.18fr);
     }
 
-    .pipe-element-diagram {
-      min-height: 252px;
+    .stiffness-panel[data-page-section="pipe"] .stiffness-form {
+      display: contents;
     }
 
-    .pipe-element-diagram svg {
-      min-width: 0;
+    .stiffness-panel[data-page-section="pipe"] .stiffness-form > .input-section:first-child {
+      grid-column: 1 / -1;
     }
 
-    .pipe-element-fields {
-      min-width: 0;
+    .stiffness-panel[data-page-section="pipe"] .stiffness-form > .input-section:not(:first-child) {
+      grid-column: 1;
+    }
+
+    .stiffness-panel[data-page-section="pipe"] .stiffness-results {
+      grid-column: 2;
+      grid-row: 2 / span 3;
     }
 
     .calc-field {
@@ -849,6 +851,29 @@
       width: 100%;
       min-width: 720px;
       height: auto;
+    }
+
+    .pipe-element-layout {
+      display: grid;
+      grid-template-columns: minmax(140px, 190px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .pipe-element-diagram {
+      width: 100%;
+      max-width: 190px;
+      min-height: 0;
+      align-self: start;
+    }
+
+    .pipe-element-diagram svg {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .pipe-element-fields {
+      min-width: 0;
     }
 
     .pipe-diagram text {
@@ -1208,6 +1233,23 @@
       .tool-header {
         align-items: flex-start;
         flex-direction: column;
+      }
+    }
+
+    @media (max-width: 1120px) {
+      .stiffness-panel[data-page-section="pipe"] .stiffness-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stiffness-panel[data-page-section="pipe"] .stiffness-form {
+        display: grid;
+      }
+
+      .stiffness-panel[data-page-section="pipe"] .stiffness-form > .input-section:first-child,
+      .stiffness-panel[data-page-section="pipe"] .stiffness-form > .input-section:not(:first-child),
+      .stiffness-panel[data-page-section="pipe"] .stiffness-results {
+        grid-column: auto;
+        grid-row: auto;
       }
     }
 
