@@ -342,9 +342,14 @@
 
     a.text-button,
     a.text-button:link,
-    a.text-button:visited {
+    a.text-button:visited,
+    a.text-button:hover,
+    a.text-button:focus,
+    a.text-button:active,
+    .utility-actions a.text-button {
       color: var(--blue);
-      text-decoration: none;
+      text-decoration: none !important;
+      border-bottom: 0;
       vertical-align: middle;
     }
 
@@ -606,6 +611,25 @@
       font-size: 16px;
       line-height: 1.3;
       letter-spacing: 0;
+    }
+
+    .pipe-element-layout {
+      display: grid;
+      grid-template-columns: minmax(210px, 0.95fr) minmax(0, 1.25fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .pipe-element-diagram {
+      min-height: 252px;
+    }
+
+    .pipe-element-diagram svg {
+      min-width: 0;
+    }
+
+    .pipe-element-fields {
+      min-width: 0;
     }
 
     .calc-field {
@@ -1174,6 +1198,7 @@
       .quick-conversions,
       .note-grid,
       .stiffness-grid,
+      .pipe-element-layout,
       .result-cards,
       .strength-grid,
       .surface-plot-grid {
@@ -1359,9 +1384,12 @@
             <div class="stiffness-form">
               <div class="input-section">
                 <h3>管道元件</h3>
-                <label class="calc-field">
-                  <span>元件</span>
-                  <select data-pipe="element" aria-label="管道元件">
+                <div class="pipe-element-layout">
+                  <div class="pipe-diagram pipe-element-diagram" id="pipeDetail" aria-label="管道压降计算示意图"></div>
+                  <div class="pipe-element-fields">
+                    <label class="calc-field">
+                      <span>元件</span>
+                      <select data-pipe="element" aria-label="管道元件">
                     <optgroup label="直管 Straight pipes">
                       <option value="circular">直圆管 Kreisrohr</option>
                       <option value="hydraulicStraight">矩形/环形/水渠/其他截面</option>
@@ -1424,19 +1452,21 @@
                       <option value="heightDifference">高度差</option>
                       <option value="dynamicPressureChange">动压变化</option>
                     </optgroup>
-                  </select>
-                  <span class="calc-unit">-</span>
-                </label>
-                <label class="calc-field">数量 <input data-pipe="count" value="1" inputmode="decimal"><span class="calc-unit">段</span></label>
-                <label class="calc-field" id="pipeDiameterField"><span id="pipeDiameterLabel">管径 D</span><input data-pipe="diameter" value="100" inputmode="decimal"><span class="calc-unit">mm</span></label>
-                <label class="calc-field field-hidden" id="pipeSecondDiameterField"><span id="pipeSecondDiameterLabel">第二管径 D2</span><input data-pipe="secondDiameter" value="160" inputmode="decimal"><span class="calc-unit">mm</span></label>
-                <label class="calc-field" id="pipeLengthField"><span id="pipeLengthLabel">管长 L</span><input data-pipe="length" value="1000" inputmode="decimal"><span class="calc-unit">mm</span></label>
-                <label class="calc-field" id="pipeRoughnessField"><span id="pipeRoughnessLabel">绝对粗糙度 k</span><input data-pipe="roughness" value="0.10" inputmode="decimal"><span class="calc-unit">mm</span></label>
-                <label class="calc-field field-hidden" id="pipeAngleField"><span id="pipeAngleLabel">角度 α</span><input data-pipe="angle" value="90" inputmode="decimal"><span class="calc-unit">deg</span></label>
-                <label class="calc-field field-hidden" id="pipeRadiusRatioField"><span id="pipeRadiusRatioLabel">弯曲半径 R/D</span><input data-pipe="radiusRatio" value="1.5" inputmode="decimal"><span class="calc-unit">-</span></label>
-                <label class="calc-field field-hidden" id="pipeOpenAreaField"><span id="pipeOpenAreaLabel">开孔率 φ</span><input data-pipe="openArea" value="60" inputmode="decimal"><span class="calc-unit">%</span></label>
-                <label class="calc-field"><span id="pipeExtraZetaLabel">附加局部阻力 ζ</span><input data-pipe="extraZeta" value="0" inputmode="decimal"><span class="calc-unit">-</span></label>
-                <p class="model-note" id="pipeElementNote">直圆管按 Darcy-Weisbach 与 Prandtl-Colebrook 计算沿程压降。</p>
+                      </select>
+                      <span class="calc-unit">-</span>
+                    </label>
+                    <label class="calc-field">数量 <input data-pipe="count" value="1" inputmode="decimal"><span class="calc-unit">段</span></label>
+                    <label class="calc-field" id="pipeDiameterField"><span id="pipeDiameterLabel">管径 D</span><input data-pipe="diameter" value="100" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                    <label class="calc-field field-hidden" id="pipeSecondDiameterField"><span id="pipeSecondDiameterLabel">第二管径 D2</span><input data-pipe="secondDiameter" value="160" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                    <label class="calc-field" id="pipeLengthField"><span id="pipeLengthLabel">管长 L</span><input data-pipe="length" value="1000" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                    <label class="calc-field" id="pipeRoughnessField"><span id="pipeRoughnessLabel">绝对粗糙度 k</span><input data-pipe="roughness" value="0.10" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                    <label class="calc-field field-hidden" id="pipeAngleField"><span id="pipeAngleLabel">角度 α</span><input data-pipe="angle" value="90" inputmode="decimal"><span class="calc-unit">deg</span></label>
+                    <label class="calc-field field-hidden" id="pipeRadiusRatioField"><span id="pipeRadiusRatioLabel">弯曲半径 R/D</span><input data-pipe="radiusRatio" value="1.5" inputmode="decimal"><span class="calc-unit">-</span></label>
+                    <label class="calc-field field-hidden" id="pipeOpenAreaField"><span id="pipeOpenAreaLabel">开孔率 φ</span><input data-pipe="openArea" value="60" inputmode="decimal"><span class="calc-unit">%</span></label>
+                    <label class="calc-field"><span id="pipeExtraZetaLabel">附加局部阻力 ζ</span><input data-pipe="extraZeta" value="0" inputmode="decimal"><span class="calc-unit">-</span></label>
+                    <p class="model-note" id="pipeElementNote">直圆管按 Darcy-Weisbach 与 Prandtl-Colebrook 计算沿程压降。</p>
+                  </div>
+                </div>
               </div>
 
               <div class="input-section">
@@ -1521,6 +1551,15 @@
                     <option value="MPa">MPa</option>
                   </select>
                 </label>
+                <label class="calc-field field-hidden" id="pipeSolveTargetField">
+                  <span>反推对象</span>
+                  <select data-pipe="solveTarget" aria-label="反推对象">
+                    <option value="auto">自动</option>
+                    <option value="secondDiameter">孔径 d</option>
+                    <option value="diameter">管径 D</option>
+                  </select>
+                  <span class="calc-unit">-</span>
+                </label>
                 <button class="text-button" type="button" id="solvePipeDiameter">反推内径</button>
                 <p class="model-note" id="pipeDiameterSolveStatus">按当前流量、物性和管道元件参数，求使总压降接近目标值的管径 D。</p>
               </div>
@@ -1540,7 +1579,6 @@
               </label>
               <div class="result-cards" id="pipeCards"></div>
               <div class="detail-text" id="pipeSummary">输入管道、流量和物性后自动计算压降。</div>
-              <div class="pipe-diagram" id="pipeDetail" aria-label="管道压降计算示意图"></div>
             </div>
           </div>
 
@@ -1871,6 +1909,22 @@
         },
         quick: [["l", "gal", 1], ["cup", "ml", 1], ["m3", "l", 1]]
       },
+      flow: {
+        label: "流量",
+        base: "m3s",
+        units: {
+          m3s: { label: "立方米/秒 m³/s", factor: 1 },
+          m3h: { label: "立方米/小时 m³/h", factor: 1 / 3600 },
+          ls: { label: "升/秒 L/s", factor: 0.001 },
+          lmin: { label: "升/分钟 L/min", factor: 0.001 / 60 },
+          lh: { label: "升/小时 L/h", factor: 0.001 / 3600 },
+          mlmin: { label: "毫升/分钟 mL/min", factor: 0.000001 / 60 },
+          cm3s: { label: "立方厘米/秒 cm³/s", factor: 0.000001 },
+          gpm: { label: "美制加仑/分钟 gpm", factor: 0.003785411784 / 60 },
+          cfm: { label: "立方英尺/分钟 cfm", factor: 0.028316846592 / 60 }
+        },
+        quick: [["m3h", "lmin", 1], ["ls", "m3h", 1], ["gpm", "lmin", 1]]
+      },
       temperature: {
         label: "温度",
         units: {
@@ -2025,6 +2079,8 @@
     const pipeLengthLabel = document.querySelector("#pipeLengthLabel");
     const pipeRoughnessLabel = document.querySelector("#pipeRoughnessLabel");
     const pipeExtraZetaLabel = document.querySelector("#pipeExtraZetaLabel");
+    const pipeSecondDiameterLabel = document.querySelector("#pipeSecondDiameterLabel");
+    const pipeSolveTargetField = document.querySelector("#pipeSolveTargetField");
     const pipeDiameterSolveStatus = document.querySelector("#pipeDiameterSolveStatus");
     const solvePipeDiameterButton = document.querySelector("#solvePipeDiameter");
     const pipeGasCorrectionSection = document.querySelector("#pipeGasCorrectionSection");
@@ -3214,35 +3270,111 @@
       return pipePressureUnitToPa(target, pipeInputMap.targetDropUnit.value);
     }
 
-    function evaluatePipeDiameter(baseData, diameterMm) {
-      return calculatePipeDrop({
-        ...baseData,
-        diameterM: diameterMm * 1e-3
-      });
+    const pipePairSolveElements = new Set([
+      "isoOrifice",
+      "orifice",
+      "roundOrifice",
+      "thickOrifice",
+      "nozzle",
+      "longNozzle",
+      "venturi"
+    ]);
+
+    function canPipeSolveDiameterPair() {
+      return pipePairSolveElements.has(pipeInputMap.element.value);
     }
 
-    function solvePipeDiameterForTarget(targetPressureDropPa) {
+    function pipeSolveTargetInfo() {
+      if (!canPipeSolveDiameterPair()) {
+        return { key: "diameter", label: "管径 D", input: pipeInputMap.diameter };
+      }
+
+      const selected = pipeInputMap.solveTarget.value;
+      if (selected === "diameter") {
+        return { key: "diameter", label: "管径 D", input: pipeInputMap.diameter };
+      }
+      if (selected === "secondDiameter") {
+        return { key: "secondDiameter", label: "孔径 d", input: pipeInputMap.secondDiameter };
+      }
+
+      const diameterValue = parseValue(pipeInputMap.diameter.value);
+      const secondDiameterValue = parseValue(pipeInputMap.secondDiameter.value);
+      if (secondDiameterValue > 0 && !(diameterValue > 0)) {
+        return { key: "diameter", label: "管径 D", input: pipeInputMap.diameter };
+      }
+      return { key: "secondDiameter", label: "孔径 d", input: pipeInputMap.secondDiameter };
+    }
+
+    function ensurePipeSolvePlaceholder(variableKey) {
+      const currentValue = parseValue(pipeInputMap[variableKey].value);
+      if (currentValue > 0) return;
+
+      if (variableKey === "secondDiameter") {
+        const pipeDiameter = parseValue(pipeInputMap.diameter.value) || 100;
+        pipeInputMap.secondDiameter.value = formatNumber(Math.max(0.05, pipeDiameter * 0.5));
+        return;
+      }
+
+      const boreDiameter = parseValue(pipeInputMap.secondDiameter.value) || 50;
+      pipeInputMap.diameter.value = formatNumber(Math.max(0.1, boreDiameter * 2));
+    }
+
+    function evaluatePipeSolveVariable(baseData, variableKey, valueMm) {
+      const nextData = { ...baseData };
+      if (variableKey === "secondDiameter") {
+        nextData.secondDiameterM = valueMm * 1e-3;
+      } else {
+        nextData.diameterM = valueMm * 1e-3;
+      }
+      return calculatePipeDrop(nextData);
+    }
+
+    function pipeSolveBounds(baseData, variableKey) {
+      if (variableKey === "secondDiameter" && canPipeSolveDiameterPair()) {
+        const pipeDiameterMm = baseData.diameterM * 1000;
+        return {
+          min: 0.05,
+          max: Math.max(0.06, pipeDiameterMm * 0.995)
+        };
+      }
+
+      if (variableKey === "diameter" && canPipeSolveDiameterPair()) {
+        const boreDiameterMm = baseData.secondDiameterM * 1000;
+        return {
+          min: Math.max(0.1, boreDiameterMm * 1.005),
+          max: Math.max(5000, boreDiameterMm * 20)
+        };
+      }
+
+      return { min: 0.1, max: 5000 };
+    }
+
+    function solvePipeVariableForTarget(targetPressureDropPa, solveTarget) {
+      ensurePipeSolvePlaceholder(solveTarget.key);
       const baseData = collectPipeInput();
-      const minDiameterMm = 0.1;
-      const maxDiameterMm = 5000;
+      const bounds = pipeSolveBounds(baseData, solveTarget.key);
       const sampleCount = 240;
       let previous = null;
       let interval = null;
       let best = null;
 
+      if (!(bounds.max > bounds.min)) {
+        throw new Error(`${solveTarget.label}的求解范围无效，请检查上方管径和孔径输入。`);
+      }
+
       for (let i = 0; i <= sampleCount; i += 1) {
         const ratio = i / sampleCount;
-        const diameterMm = minDiameterMm * (maxDiameterMm / minDiameterMm) ** ratio;
+        const valueMm = bounds.min * (bounds.max / bounds.min) ** ratio;
         let result;
         try {
-          result = evaluatePipeDiameter(baseData, diameterMm);
+          result = evaluatePipeSolveVariable(baseData, solveTarget.key, valueMm);
         } catch (error) {
           previous = null;
           continue;
         }
 
         const delta = result.totalPressureDropPa - targetPressureDropPa;
-        const candidate = { diameterMm, delta, result };
+        const candidate = { valueMm, delta, result };
         if (!best || Math.abs(delta) < Math.abs(best.delta)) {
           best = candidate;
         }
@@ -3260,17 +3392,17 @@
       }
 
       if (!interval) {
-        if (!best) throw new Error("当前参数无法进行内径反推。");
-        throw new Error(`0.1~5000 mm 范围内未找到满足目标压降的内径；最接近值为 D=${formatNumber(best.diameterMm)} mm，Δp=${pipeFormatPressure(best.result.totalPressureDropPa)}。`);
+        if (!best) throw new Error(`当前参数无法反推${solveTarget.label}。`);
+        throw new Error(`${formatNumber(bounds.min)}~${formatNumber(bounds.max)} mm 范围内未找到满足目标压降的${solveTarget.label}；最接近值为 ${solveTarget.label}=${formatNumber(best.valueMm)} mm，Δp=${pipeFormatPressure(best.result.totalPressureDropPa)}。`);
       }
 
       let low = interval.low;
       let high = interval.high;
       for (let i = 0; i < 90; i += 1) {
-        const midDiameterMm = Math.sqrt(low.diameterMm * high.diameterMm);
-        const result = evaluatePipeDiameter(baseData, midDiameterMm);
+        const midValueMm = Math.sqrt(low.valueMm * high.valueMm);
+        const result = evaluatePipeSolveVariable(baseData, solveTarget.key, midValueMm);
         const delta = result.totalPressureDropPa - targetPressureDropPa;
-        const mid = { diameterMm: midDiameterMm, delta, result };
+        const mid = { valueMm: midValueMm, delta, result };
 
         if (Math.abs(delta) <= Math.max(1e-6, targetPressureDropPa * 1e-8)) {
           return mid;
@@ -3292,15 +3424,16 @@
         updatePipeGasCorrectionUi();
         updatePipeFlowUnit();
         const targetPressureDropPa = pipeTargetPressureDropPa();
-        const solution = solvePipeDiameterForTarget(targetPressureDropPa);
-        pipeInputMap.diameter.value = formatNumber(solution.diameterMm);
+        const solveTarget = pipeSolveTargetInfo();
+        const solution = solvePipeVariableForTarget(targetPressureDropPa, solveTarget);
+        solveTarget.input.value = formatNumber(solution.valueMm);
         const result = calculatePipeDrop(collectPipeInput());
         renderPipeResult(result);
         const targetText = pipeFormatPressure(targetPressureDropPa);
-        const solvedText = `反推结果：D = ${formatNumber(solution.diameterMm)} mm，总压降 = ${pipeFormatPressure(result.totalPressureDropPa)}。`;
+        const solvedText = `反推结果：${solveTarget.label} = ${formatNumber(solution.valueMm)} mm，总压降 = ${pipeFormatPressure(result.totalPressureDropPa)}。`;
         pipeDiameterSolveStatus.textContent = `${solvedText} 目标总压降 ${targetText}。`;
-        window.lastPipeText = `${window.lastPipeText || buildPipeText(result)}\n\n内径反推\n目标总压降: ${targetText}\n${solvedText}`;
-        showToast("内径反推完成");
+        window.lastPipeText = `${window.lastPipeText || buildPipeText(result)}\n\n管径/孔径反推\n目标总压降: ${targetText}\n${solvedText}`;
+        showToast(`${solveTarget.label}反推完成`);
         return result;
       } catch (error) {
         pipeDiameterSolveStatus.textContent = error.message;
@@ -3311,34 +3444,17 @@
 
     function buildPipeDiagram(result) {
       const imageMarkup = result.elementDef.image
-        ? `<image href="https://www.pressure-drop.online/imgs/${result.elementDef.image}" x="62" y="42" width="304" height="180" preserveAspectRatio="xMidYMid meet"/>`
-        : `<text x="72" y="132" fill="#1a73e8" font-size="24" font-weight="700">ζ</text><text x="110" y="132" fill="#202124" font-size="18">直接输入阻力系数</text>`;
-      const lines = [
-        `元件：${result.elementName}`,
-        `D：计算基准管径 = ${formatNumber(result.velocityDiameterM * 1000)} mm`,
-        `Q：实际体积流量 = ${formatNumber(result.volumeFlowM3S * 3600)} m³/h`,
-        `v：流速 = ${formatNumber(result.velocityMS)} m/s`,
-        `Re：雷诺数 = ${formatNumber(result.reynolds)}`,
-        `λ：Darcy 管摩擦系数 = ${formatNumber(result.lambda)}`,
-        `ζlocal：${formatNumber(result.localZeta)}`,
-        `ζtotal：${formatNumber(result.zetaPerElement)}`
-      ];
+        ? `<image href="https://www.pressure-drop.online/imgs/${result.elementDef.image}" x="24" y="54" width="272" height="154" preserveAspectRatio="xMidYMid meet"/>`
+        : `<text x="44" y="132" fill="#1a73e8" font-size="24" font-weight="700">ζ</text><text x="82" y="132" fill="#202124" font-size="18">直接输入阻力系数</text>`;
 
       return `
-        <svg viewBox="0 0 860 430" role="img" aria-label="管道压降计算示意图">
-          <rect x="0" y="0" width="860" height="430" fill="#fff"/>
-          <text x="24" y="38" fill="#202124" font-size="21" font-weight="700">${escapeHtml(result.elementName)}</text>
-          <text x="24" y="64" fill="#5f6368" font-size="14">参考 pressure-drop.online 的 ${escapeHtml(result.elementDef.group)} 元件分类</text>
-          <g transform="translate(34 104)">
-            <rect x="18" y="16" width="392" height="256" rx="10" fill="#f8fafd" stroke="#dadce0"/>
-            ${imageMarkup}
-            <text x="34" y="296" fill="#5f6368" font-size="13">本地结果为工程估算；逐项核验请使用下方原站窗口</text>
-            <text x="34" y="318" fill="#202124" font-size="14">Δp = ζ · ρv² / 2；${escapeHtml(result.zetaMethod)}</text>
-          </g>
-          <rect x="472" y="82" width="336" height="292" rx="8" fill="#f8fafd" stroke="#dadce0"/>
-          <text x="494" y="112" fill="#202124" font-size="16" font-weight="700">参数与结果说明</text>
-          ${svgTextLines(lines, 494, 142)}
-          <text x="494" y="348" fill="#5f6368" font-size="13">湍流 λ 使用 Prandtl-Colebrook 隐式公式迭代求解。</text>
+        <svg viewBox="0 0 320 252" role="img" aria-label="管道元件示意图">
+          <rect x="0" y="0" width="320" height="252" fill="#fff"/>
+          <text x="18" y="28" fill="#202124" font-size="18" font-weight="700">${escapeHtml(result.elementName)}</text>
+          <text x="18" y="48" fill="#5f6368" font-size="12">参考 pressure-drop.online 的 ${escapeHtml(result.elementDef.group)} 元件图</text>
+          <rect x="14" y="58" width="292" height="158" rx="8" fill="#f8fafd" stroke="#dadce0"/>
+          ${imageMarkup}
+          <text x="18" y="232" fill="#5f6368" font-size="12">Δp = ζ · ρv² / 2；λ 由 Re 与粗糙度计算</text>
         </svg>
       `;
     }
@@ -3409,16 +3525,21 @@
       pipeAngleField.classList.toggle("field-hidden", !fields.has("angle"));
       pipeRadiusRatioField.classList.toggle("field-hidden", !fields.has("radiusRatio"));
       pipeOpenAreaField.classList.toggle("field-hidden", !fields.has("openArea"));
+      pipeSolveTargetField.classList.toggle("field-hidden", !canPipeSolveDiameterPair());
 
       pipeLengthLabel.textContent = pipeInputMap.element.value === "heightDifference" ? "高度差 H" : "管长 L";
       pipeRoughnessLabel.textContent = fields.has("roughness") ? "绝对粗糙度 k" : "绝对粗糙度 k";
       pipeExtraZetaLabel.textContent = pipeInputMap.element.value === "userZeta" ? "输入阻力系数 ζ" : "附加局部阻力 ζ";
       pipeElementNote.textContent = elementDef.note;
 
-      if (["orifice", "nozzle"].includes(pipeInputMap.element.value)) {
-        document.querySelector("#pipeSecondDiameterLabel").textContent = "孔径 d";
+      if (canPipeSolveDiameterPair()) {
+        pipeSecondDiameterLabel.textContent = "孔径 d";
+        solvePipeDiameterButton.textContent = "反推管径/孔径";
+        pipeDiameterSolveStatus.textContent = "孔板/喷嘴类：已知管径 D 可反推孔径 d；已知孔径 d 也可反推管径 D。";
       } else {
-        document.querySelector("#pipeSecondDiameterLabel").textContent = "第二管径 D2";
+        pipeSecondDiameterLabel.textContent = "第二管径 D2";
+        solvePipeDiameterButton.textContent = "反推管径";
+        pipeDiameterSolveStatus.textContent = "按当前流量、物性和管道元件参数，求使总压降接近目标值的管径 D。";
       }
     }
 
