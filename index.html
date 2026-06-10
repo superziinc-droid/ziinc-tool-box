@@ -614,24 +614,53 @@
     }
 
     .stiffness-panel[data-page-section="pipe"] .stiffness-grid {
-      grid-template-columns: minmax(340px, .82fr) minmax(0, 1.18fr);
+      grid-template-columns: minmax(520px, 1fr) minmax(360px, .82fr);
+      gap: 20px 22px;
+      align-items: start;
     }
 
     .stiffness-panel[data-page-section="pipe"] .stiffness-form {
-      display: contents;
+      display: grid;
+      gap: 16px;
     }
 
-    .stiffness-panel[data-page-section="pipe"] .stiffness-form > .input-section:first-child {
-      grid-column: 1 / -1;
+    .stiffness-panel[data-page-section="pipe"] .input-section {
+      padding: 16px 18px;
     }
 
-    .stiffness-panel[data-page-section="pipe"] .stiffness-form > .input-section:not(:first-child) {
-      grid-column: 1;
+    .stiffness-panel[data-page-section="pipe"] .input-section + .input-section {
+      margin-top: 0;
     }
 
     .stiffness-panel[data-page-section="pipe"] .stiffness-results {
-      grid-column: 2;
-      grid-row: 2 / span 3;
+      gap: 16px;
+      align-self: start;
+    }
+
+    .stiffness-panel[data-page-section="pipe"] .result-cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .pipe-results-head {
+      display: grid;
+      grid-template-columns: minmax(140px, 1fr) minmax(220px, 300px);
+      gap: 12px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+      background: #fff;
+    }
+
+    .pipe-results-head h3 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.3;
+    }
+
+    .pipe-result-unit-field {
+      margin-top: 0;
+      grid-template-columns: minmax(92px, 1fr) minmax(86px, 128px) 16px;
     }
 
     .calc-field {
@@ -855,14 +884,14 @@
 
     .pipe-element-layout {
       display: grid;
-      grid-template-columns: minmax(140px, 190px) minmax(0, 1fr);
+      grid-template-columns: minmax(130px, 160px) minmax(0, 1fr);
       gap: 16px;
       align-items: start;
     }
 
     .pipe-element-diagram {
       width: 100%;
-      max-width: 190px;
+      max-width: 160px;
       min-height: 0;
       align-self: start;
     }
@@ -874,6 +903,10 @@
 
     .pipe-element-fields {
       min-width: 0;
+    }
+
+    .pipe-element-fields .calc-field {
+      grid-template-columns: minmax(104px, 1fr) minmax(92px, 128px) minmax(40px, 76px);
     }
 
     .pipe-diagram text {
@@ -1241,15 +1274,8 @@
         grid-template-columns: 1fr;
       }
 
-      .stiffness-panel[data-page-section="pipe"] .stiffness-form {
-        display: grid;
-      }
-
-      .stiffness-panel[data-page-section="pipe"] .stiffness-form > .input-section:first-child,
-      .stiffness-panel[data-page-section="pipe"] .stiffness-form > .input-section:not(:first-child),
-      .stiffness-panel[data-page-section="pipe"] .stiffness-results {
-        grid-column: auto;
-        grid-row: auto;
+      .stiffness-panel[data-page-section="pipe"] .result-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
 
@@ -1288,6 +1314,18 @@
       .app-nav {
         width: 100%;
         flex-wrap: nowrap;
+      }
+
+      .pipe-results-head {
+        grid-template-columns: 1fr;
+      }
+
+      .pipe-result-unit-field {
+        grid-template-columns: minmax(112px, 1fr) minmax(96px, 128px) 16px;
+      }
+
+      .stiffness-panel[data-page-section="pipe"] .result-cards {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -1608,7 +1646,9 @@
             </div>
 
             <div class="stiffness-results">
-              <label class="calc-field">
+              <div class="pipe-results-head">
+                <h3>计算结果</h3>
+                <label class="calc-field pipe-result-unit-field">
                 <span>结果压力单位</span>
                 <select data-pipe="resultPressureUnit" aria-label="结果压力单位">
                   <option value="bar">bar</option>
@@ -1618,7 +1658,8 @@
                   <option value="psi">psi</option>
                 </select>
                 <span class="calc-unit">-</span>
-              </label>
+                </label>
+              </div>
               <div class="result-cards" id="pipeCards"></div>
               <div class="detail-text" id="pipeSummary">输入管道、流量和物性后自动计算压降。</div>
             </div>
