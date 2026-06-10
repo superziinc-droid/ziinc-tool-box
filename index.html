@@ -2940,12 +2940,15 @@
         name: "厚边孔板",
         group: "节流件",
         image: "2604.gif",
-        fields: ["secondDiameter"],
-        note: "厚边孔板按 Cd≈0.75 估算。",
-        zeta: ({ data }) => {
+        fields: ["secondDiameter", "length"],
+        note: "厚边孔板按 Cd≈0.75 估算，L 作为孔板厚度/孔道长度并叠加孔内沿程项。",
+        zeta: ({ data, lambda }) => {
           const beta = Math.min(data.secondDiameterM, data.diameterM) / Math.max(data.secondDiameterM, data.diameterM);
+          const boreDiameter = Math.min(data.secondDiameterM, data.diameterM);
           const cd = 0.75;
-          return { value: (1 - beta ** 4) / (cd ** 2 * beta ** 4), method: "厚边孔板 ζ≈(1-β⁴)/(Cd²β⁴), Cd=0.75" };
+          const orificeLoss = (1 - beta ** 4) / (cd ** 2 * beta ** 4);
+          const boreFriction = lambda * data.lengthM / boreDiameter;
+          return { value: orificeLoss + boreFriction, method: "厚边孔板 ζ≈(1-β⁴)/(Cd²β⁴)+λL/d, Cd=0.75" };
         }
       },
       nozzle: {
@@ -3614,7 +3617,11 @@
       pipeOpenAreaField.classList.toggle("field-hidden", !fields.has("openArea"));
       pipeSolveTargetField.classList.toggle("field-hidden", !canPipeSolveDiameterPair());
 
-      pipeLengthLabel.textContent = pipeInputMap.element.value === "heightDifference" ? "高度差 H" : "管长 L";
+      pipeLengthLabel.textContent = pipeInputMap.element.value === "heightDifference"
+        ? "高度差 H"
+        : pipeInputMap.element.value === "thickOrifice"
+          ? "孔板厚度 L"
+          : "管长 L";
       pipeRoughnessLabel.textContent = fields.has("roughness") ? "绝对粗糙度 k" : "绝对粗糙度 k";
       pipeExtraZetaLabel.textContent = pipeInputMap.element.value === "userZeta" ? "输入阻力系数 ζ" : "附加局部阻力 ζ";
       pipeElementNote.textContent = elementDef.note;
