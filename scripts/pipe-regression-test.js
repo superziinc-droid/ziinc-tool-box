@@ -144,6 +144,11 @@ approx(downhill.totalPressureDropPa, -998.206 * 9.80665 * 10, 1e-8, "negative he
 const orificeTarget = calculatePipeDrop(baseData({ element: "orifice", elementDef: pipeElementCatalog.orifice, elementName: pipeElementCatalog.orifice.name, secondDiameterM: 0.05 })).totalPressureDropPa;
 
 assert(pipeElementCatalog.thickOrifice.fields.includes("length"), "thick orifice exposes L parameter");
+assert(pipeSourceGroups.length === 12, "source menu exposes 12 pressure-drop groups");
+assert(
+  pipeSourceGroups.find((group) => group.value === "orifices").subgroups.find((subgroup) => subgroup.value === "orifices.thick").element === "thickOrifice",
+  "source menu maps thick-edged orifice to thickOrifice"
+);
 const thickShort = calculatePipeDrop(baseData({ element: "thickOrifice", elementDef: pipeElementCatalog.thickOrifice, elementName: pipeElementCatalog.thickOrifice.name, secondDiameterM: 0.05, lengthM: 0.01 }));
 const thickLong = calculatePipeDrop(baseData({ element: "thickOrifice", elementDef: pipeElementCatalog.thickOrifice, elementName: pipeElementCatalog.thickOrifice.name, secondDiameterM: 0.05, lengthM: 0.02 }));
 approx(thickLong.totalZeta - thickShort.totalZeta, thickShort.lambda * 0.01 / 0.05, 1e-10, "thick orifice L friction term");

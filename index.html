@@ -614,8 +614,8 @@
     }
 
     .stiffness-panel[data-page-section="pipe"] .stiffness-grid {
-      grid-template-columns: minmax(520px, 1fr) minmax(360px, .82fr);
-      gap: 20px 22px;
+      grid-template-columns: minmax(420px, .76fr) minmax(440px, 1fr);
+      gap: 20px;
       align-items: start;
     }
 
@@ -635,6 +635,7 @@
     .stiffness-panel[data-page-section="pipe"] .stiffness-results {
       gap: 16px;
       align-self: start;
+      min-width: 0;
     }
 
     .stiffness-panel[data-page-section="pipe"] .result-cards {
@@ -884,16 +885,17 @@
 
     .pipe-element-layout {
       display: grid;
-      grid-template-columns: minmax(130px, 160px) minmax(0, 1fr);
-      gap: 16px;
+      grid-template-columns: minmax(116px, 148px) minmax(0, 1fr);
+      gap: 14px;
       align-items: start;
     }
 
     .pipe-element-diagram {
       width: 100%;
-      max-width: 160px;
+      max-width: 148px;
       min-height: 0;
       align-self: start;
+      overflow: hidden;
     }
 
     .pipe-element-diagram svg {
@@ -906,7 +908,18 @@
     }
 
     .pipe-element-fields .calc-field {
-      grid-template-columns: minmax(104px, 1fr) minmax(92px, 128px) minmax(40px, 76px);
+      grid-template-columns: minmax(82px, 96px) minmax(0, 1fr) minmax(38px, 64px);
+      gap: 8px;
+    }
+
+    .pipe-element-fields .calc-field input,
+    .pipe-element-fields .calc-field select {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .pipe-source-field select {
+      font-weight: 600;
     }
 
     .pipe-diagram text {
@@ -1467,7 +1480,21 @@
                 <div class="pipe-element-layout">
                   <div class="pipe-diagram pipe-element-diagram" id="pipeDetail" aria-label="管道压降计算示意图"></div>
                   <div class="pipe-element-fields">
-                    <label class="calc-field">
+                    <label class="calc-field pipe-source-field">
+                      <span>类别</span>
+                      <select data-pipe="elementGroup" id="pipeElementGroup" aria-label="管道元件类别">
+                        <option value="straight">Straight pipes</option>
+                      </select>
+                      <span class="calc-unit">-</span>
+                    </label>
+                    <label class="calc-field pipe-source-field">
+                      <span>元件</span>
+                      <select data-pipe="elementSubgroup" id="pipeElementSubgroup" aria-label="管道元件子类">
+                        <option value="straight.circular">circular</option>
+                      </select>
+                      <span class="calc-unit">-</span>
+                    </label>
+                    <label class="calc-field field-hidden">
                       <span>元件</span>
                       <select data-pipe="element" aria-label="管道元件">
                     <optgroup label="直管 Straight pipes">
@@ -3080,6 +3107,200 @@
       }
     };
 
+    const pipeSourceGroups = [
+      {
+        value: "straight",
+        label: "Straight pipes",
+        subgroups: [
+          { value: "straight.circular", label: "circular", element: "circular" },
+          { value: "straight.rectangular", label: "rectangular", element: "hydraulicStraight" },
+          { value: "straight.ring", label: "Circular ring", element: "hydraulicStraight" },
+          { value: "straight.channel", label: "Channel", element: "hydraulicStraight" },
+          { value: "straight.corrugated", label: "Corrugated pipe", element: "corrugatedPipe" },
+          { value: "straight.other", label: "Other form", element: "hydraulicStraight" }
+        ]
+      },
+      {
+        value: "entrance",
+        label: "Pipe entrance",
+        subgroups: [
+          { value: "entrance.sharp", label: "Sharp edged entrance", element: "sharpEntrance" },
+          { value: "entrance.rounded", label: "Rounded entrance", element: "roundedEntrance" },
+          { value: "entrance.angled", label: "Sharp edged entrance with angle", element: "angledEntrance" },
+          { value: "entrance.projecting", label: "Inward projecting pipe entrance", element: "projectingEntrance" }
+        ]
+      },
+      {
+        value: "section",
+        label: "Changes of section",
+        subgroups: [
+          { value: "section.suddenExpansion", label: "Sudden enlargement", element: "suddenExpansion" },
+          { value: "section.gradualExpansion", label: "Gradual enlargement", element: "gradualExpansion" },
+          { value: "section.suddenContraction", label: "Sudden contraction", element: "suddenContraction" },
+          { value: "section.gradualContraction", label: "Gradual contraction", element: "gradualContraction" }
+        ]
+      },
+      {
+        value: "bends",
+        label: "Bends",
+        subgroups: [
+          { value: "bends.circular", label: "Circular bend", element: "bendCustom" },
+          { value: "bends.segments", label: "Bend of segments", element: "segmentBend" },
+          { value: "bends.cast", label: "Cast iron bend", element: "elbow90" },
+          { value: "bends.rectangular", label: "Rectangular bend", element: "bendCustom" },
+          { value: "bends.miterCircular", label: "Miter bend, circular", element: "miterBend" },
+          { value: "bends.miterRectangular", label: "Miter bend, rectangular", element: "miterBend" }
+        ]
+      },
+      {
+        value: "branches",
+        label: "Brandings of current",
+        subgroups: [
+          { value: "branches.teeSharp", label: "Tee, sharp edged", element: "teeBranch" },
+          { value: "branches.teeGlobular", label: "Tee, globular", element: "teeBranch" },
+          { value: "branches.teeRounded", label: "Tee, rounded bottom plain", element: "teeBranch" },
+          { value: "branches.teeNeck", label: "Tee, globular neck rounded", element: "teeBranch" },
+          { value: "branches.asunder", label: "Branch flowing asunder", element: "teeBranch" },
+          { value: "branches.together", label: "Branch flowing together", element: "teeRun" },
+          { value: "branches.yStraight", label: "Y-pipe straight", element: "yPipe" },
+          { value: "branches.yBent", label: "Y-pipe bent", element: "yPipe" }
+        ]
+      },
+      {
+        value: "bellows",
+        label: "Bellows",
+        subgroups: [
+          { value: "bellows.compensator", label: "Compensator corrugated tube", element: "corrugatedCompensator" },
+          { value: "bellows.lyra", label: "Lyra-bend", element: "lyraBend" },
+          { value: "bellows.u", label: "U-bend", element: "uBend" }
+        ]
+      },
+      {
+        value: "valves",
+        label: "Valves",
+        subgroups: [
+          { value: "valves.globe", label: "Globe valve", element: "globeValve" },
+          { value: "valves.yGlobe", label: "Globe valve Y-pattern", element: "yGlobeValve" },
+          { value: "valves.angle", label: "Angle valve", element: "angleValve" },
+          { value: "valves.gate", label: "Gate valve", element: "gateValve" },
+          { value: "valves.cock", label: "Cock", element: "ballValve" },
+          { value: "valves.swing", label: "Swing valve", element: "butterflyValve" }
+        ]
+      },
+      {
+        value: "checkValves",
+        label: "Check valves",
+        subgroups: [
+          { value: "check.globeLift", label: "Check valve globe lift", element: "liftCheckValve" },
+          { value: "check.yPattern", label: "Check valve, Y-pattern globe lift", element: "liftCheckValve" },
+          { value: "check.swing", label: "Check valve swing", element: "checkValve" }
+        ]
+      },
+      {
+        value: "orifices",
+        label: "Nozzles and orifices",
+        subgroups: [
+          { value: "orifices.iso5167", label: "Orifice ISO 5167", element: "isoOrifice" },
+          { value: "orifices.sharp", label: "Orifice sharp-edged", element: "orifice" },
+          { value: "orifices.round", label: "Orifice round-edged", element: "roundOrifice" },
+          { value: "orifices.thick", label: "Orifice thick-edged", element: "thickOrifice" },
+          { value: "orifices.nozzle", label: "Nozzle", element: "nozzle" },
+          { value: "orifices.longNozzle", label: "Long radius nozzle", element: "longNozzle" },
+          { value: "orifices.venturi", label: "Venturi tube", element: "venturi" }
+        ]
+      },
+      {
+        value: "perforated",
+        label: "Perforated plates",
+        subgroups: [
+          { value: "perforated.thinCircular", label: "Perforated plate thin circular", element: "perforatedPlate" },
+          { value: "perforated.thinRectangular", label: "Perforated plate thin rectangular", element: "perforatedPlate" },
+          { value: "perforated.thickCircular", label: "Perforated plate thick circular", element: "perforatedPlate" },
+          { value: "perforated.thickRectangular", label: "Perforated plate thick rectangular", element: "perforatedPlate" }
+        ]
+      },
+      {
+        value: "strainers",
+        label: "Strainers and grids",
+        subgroups: [
+          { value: "strainers.gridCircular", label: "Metal grid circular", element: "metalGrid" },
+          { value: "strainers.gridRectangular", label: "Metal grid rectangular", element: "metalGrid" },
+          { value: "strainers.wireCircular", label: "Metal wire circular", element: "screen" },
+          { value: "strainers.wireRectangular", label: "Metal wire rectangular", element: "screen" },
+          { value: "strainers.twoPlaneCircular", label: "Two-plane screen circular", element: "screen" },
+          { value: "strainers.twoPlaneRectangular", label: "Two-plane screen rectangular", element: "screen" },
+          { value: "strainers.y", label: "Y-Strainer", element: "yStrainer" },
+          { value: "strainers.basket", label: "Screen basket filter", element: "basketStrainer" },
+          { value: "strainers.conical", label: "Conical strainer", element: "conicalStrainer" }
+        ]
+      },
+      {
+        value: "diverse",
+        label: "Diverse",
+        subgroups: [
+          { value: "diverse.vertical", label: "Vertical difference", element: "heightDifference" },
+          { value: "diverse.zeta", label: "Resistance coefficient", element: "userZeta" }
+        ]
+      }
+    ];
+
+    function pipeSetSelectOptions(select, options, selectedValue) {
+      const currentValue = selectedValue ?? select.value;
+      select.replaceChildren(...options.map((option) => {
+        const item = document.createElement("option");
+        item.value = option.value;
+        item.textContent = option.label;
+        return item;
+      }));
+      const hasSelected = options.some((option) => option.value === currentValue);
+      select.value = hasSelected ? currentValue : (options[0]?.value || "");
+    }
+
+    function currentPipeSourceGroup() {
+      return pipeSourceGroups.find((group) => group.value === pipeInputMap.elementGroup?.value) || pipeSourceGroups[0];
+    }
+
+    function currentPipeSourceSubgroup() {
+      const group = currentPipeSourceGroup();
+      return group.subgroups.find((subgroup) => subgroup.value === pipeInputMap.elementSubgroup?.value) || group.subgroups[0];
+    }
+
+    function updatePipeSourceSubgroups(selectedValue) {
+      const group = currentPipeSourceGroup();
+      pipeSetSelectOptions(pipeInputMap.elementSubgroup, group.subgroups, selectedValue);
+    }
+
+    function syncPipeElementFromSource() {
+      const subgroup = currentPipeSourceSubgroup();
+      if (subgroup?.element) {
+        pipeInputMap.element.value = subgroup.element;
+      }
+    }
+
+    function syncPipeSourceFromElement(elementValue = pipeInputMap.element.value) {
+      for (const group of pipeSourceGroups) {
+        const subgroup = group.subgroups.find((item) => item.element === elementValue);
+        if (subgroup) {
+          pipeInputMap.elementGroup.value = group.value;
+          updatePipeSourceSubgroups(subgroup.value);
+          pipeInputMap.elementSubgroup.value = subgroup.value;
+          return;
+        }
+      }
+      pipeInputMap.elementGroup.value = pipeSourceGroups[0].value;
+      updatePipeSourceSubgroups(pipeSourceGroups[0].subgroups[0].value);
+      syncPipeElementFromSource();
+    }
+
+    function initializePipeSourceMenu() {
+      if (!pipeInputMap.elementGroup || !pipeInputMap.elementSubgroup) return;
+      pipeSetSelectOptions(pipeInputMap.elementGroup, pipeSourceGroups, pipeInputMap.elementGroup.value || pipeSourceGroups[0].value);
+      updatePipeSourceSubgroups();
+      syncPipeSourceFromElement(pipeInputMap.element.value || "circular");
+      pipeDefaults.elementGroup = pipeInputMap.elementGroup.value;
+      pipeDefaults.elementSubgroup = pipeInputMap.elementSubgroup.value;
+    }
+
     function pipeNumber(key, label) {
       const value = parseValue(pipeInputMap[key].value);
       if (value === null) {
@@ -3721,17 +3942,17 @@
 
     function buildPipeDiagram(result) {
       const imageMarkup = result.elementDef.image
-        ? `<image href="https://www.pressure-drop.online/imgs/${result.elementDef.image}" x="24" y="54" width="272" height="154" preserveAspectRatio="xMidYMid meet"/>`
-        : `<text x="44" y="132" fill="#1a73e8" font-size="24" font-weight="700">ζ</text><text x="82" y="132" fill="#202124" font-size="18">直接输入阻力系数</text>`;
+        ? `<image href="https://www.pressure-drop.online/imgs/${result.elementDef.image}" x="20" y="40" width="220" height="120" preserveAspectRatio="xMidYMid meet"/>`
+        : `<text x="42" y="106" fill="#1a73e8" font-size="24" font-weight="700">ζ</text><text x="78" y="106" fill="#202124" font-size="16">阻力系数</text>`;
 
       return `
-        <svg viewBox="0 0 320 252" role="img" aria-label="管道元件示意图">
-          <rect x="0" y="0" width="320" height="252" fill="#fff"/>
-          <text x="18" y="28" fill="#202124" font-size="18" font-weight="700">${escapeHtml(result.elementName)}</text>
-          <text x="18" y="48" fill="#5f6368" font-size="12">参考 pressure-drop.online 的 ${escapeHtml(result.elementDef.group)} 元件图</text>
-          <rect x="14" y="58" width="292" height="158" rx="8" fill="#f8fafd" stroke="#dadce0"/>
+        <svg viewBox="0 0 260 214" role="img" aria-label="管道元件示意图">
+          <rect x="0" y="0" width="260" height="214" fill="#fff"/>
+          <text x="14" y="24" fill="#202124" font-size="16" font-weight="700">${escapeHtml(result.elementName)}</text>
+          <rect x="12" y="34" width="236" height="134" rx="8" fill="#f8fafd" stroke="#dadce0"/>
           ${imageMarkup}
-          <text x="18" y="232" fill="#5f6368" font-size="12">Δp = ζ · ρv² / 2；λ 由 Re 与粗糙度计算</text>
+          <text x="14" y="188" fill="#5f6368" font-size="11">Δp = ζ · ρv² / 2</text>
+          <text x="14" y="204" fill="#5f6368" font-size="11">λ 由 Re 与粗糙度计算</text>
         </svg>
       `;
     }
@@ -6021,7 +6242,14 @@
 
     pipeInputs.forEach((input) => {
       input.addEventListener("change", () => {
-        if (input.dataset.pipe === "mediumPreset") {
+        if (input.dataset.pipe === "elementGroup") {
+          updatePipeSourceSubgroups();
+          syncPipeElementFromSource();
+        } else if (input.dataset.pipe === "elementSubgroup") {
+          syncPipeElementFromSource();
+        } else if (input.dataset.pipe === "element") {
+          syncPipeSourceFromElement(input.value);
+        } else if (input.dataset.pipe === "mediumPreset") {
           applyPipeMediumPreset();
         } else if (["mediumTemp", "phase", "density", "densityUnit", "viscosityMode", "viscosity", "viscosityUnit"].includes(input.dataset.pipe)) {
           pipeInputMap.mediumPreset.value = "custom";
@@ -6058,6 +6286,7 @@
       Object.entries(pipeDefaults).forEach(([key, value]) => {
         pipeInputMap[key].value = value;
       });
+      syncPipeSourceFromElement(pipeInputMap.element.value || "circular");
       applyPipeMediumPreset();
       updatePipeGasCorrectionUi();
       updatePipeFlowUnit();
@@ -6161,6 +6390,7 @@
     updateConversion();
     renderEmptyDataChart();
     renderEmptySurfacePlots();
+    initializePipeSourceMenu();
     applyPipeMediumPreset();
     updatePipeFlowUnit();
     runPipeCalculation();
