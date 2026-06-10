@@ -53,6 +53,7 @@ function setPipeInputs(values = {}) {
     flowUnit: "m3h",
     density: 998.206,
     densityUnit: "kg_m3",
+    viscosityMode: "dynamic",
     viscosity: 1001.605,
     viscosityUnit: "uPaS",
     count: 1,
@@ -65,8 +66,11 @@ function setPipeInputs(values = {}) {
     openArea: 60,
     extraZeta: 0,
     inletPressure: 1.01325,
+    inletPressureUnit: "bar",
     inletTemp: 20,
+    inletTempUnit: "C",
     outletTemp: 20,
+    outletTempUnit: "C",
     targetDrop: 0.1,
     targetDropUnit: "bar",
     resultPressureUnit: "bar",
@@ -115,10 +119,24 @@ approx(straight.totalZeta, 0.2045767358321545, 1e-10, "straight total zeta");
 approx(pipePressurePaToUnit(straight.totalPressureDropPa, "bar"), 0.012772080901061076, 1e-10, "straight pressure drop bar");
 
 approx(pipeFlowValueToM3S(1, "m3h"), 1 / 3600, 1e-15, "m3h conversion");
+approx(pipeFlowValueToM3S(1, "m3min"), 1 / 60, 1e-15, "m3/min conversion");
 approx(pipeFlowValueToM3S(60, "lmin"), 0.001, 1e-15, "L/min conversion");
+approx(pipeFlowValueToM3S(1, "cuft_min"), 0.028316846592 / 60, 1e-15, "cu.ft./min conversion");
+approx(pipeFlowValueToM3S(1, "bbl_day"), 0.158987294928 / 86400, 1e-15, "petr.bl./day conversion");
+approx(pipeFlowValueToM3S(1, "gal_min"), 0.003785411784 / 60, 1e-15, "gal/min conversion");
 approx(pipeFlowValueToM3S(1, "nm3h"), 1 / 3600, 1e-15, "Nm3/h conversion");
 approx(pipeFlowValueToM3S(1, "nm3min"), 1 / 60, 1e-15, "Nm3/min conversion");
 approx(pipeFlowValueToM3S(1, "nm3s"), 1, 1e-15, "Nm3/s conversion");
+approx(pipeMassFlowValueToKgS(1, "kgmin"), 1 / 60, 1e-15, "kg/min conversion");
+approx(pipeMassFlowValueToKgS(1, "lb_s"), 0.45359237, 1e-15, "lb/s conversion");
+approx(pipeMassFlowValueToKgS(1, "oz_min"), 0.028349523125 / 60, 1e-15, "oz/min conversion");
+approx(pipeDensityToKgM3(1, "kg_l"), 1000, 1e-12, "kg/l density conversion");
+approx(pipeDensityToKgM3(1, "g_l"), 1, 1e-12, "g/l density conversion");
+approx(pipeDensityToKgM3(1, "lb_gal"), 0.45359237 / 0.003785411784, 1e-12, "lb/gal density conversion");
+approx(pipeViscosityToPaS(1, "cP", "dynamic", 1000), 0.001, 1e-15, "cP viscosity conversion");
+approx(pipeViscosityToPaS(1, "cSt", "kinematic", 998.206), 998.206e-6, 1e-15, "cSt kinematic conversion");
+approx(pipePressureToPa(1, "psia"), 6894.757293168, 1e-9, "psia pressure conversion");
+approx(pipeTemperatureToK(68, "F"), 293.15, 1e-12, "degF temperature conversion");
 
 const downhill = calculatePipeDrop(baseData({ element: "heightDifference", elementDef: pipeElementCatalog.heightDifference, elementName: pipeElementCatalog.heightDifference.name, lengthM: -10 }));
 approx(downhill.totalPressureDropPa, -998.206 * 9.80665 * 10, 1e-8, "negative height pressure gain");

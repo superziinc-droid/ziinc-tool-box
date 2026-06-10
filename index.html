@@ -1594,28 +1594,74 @@
                   <span>密度 ρ</span>
                   <input data-pipe="density" value="998.206" inputmode="decimal">
                   <select data-pipe="densityUnit" aria-label="密度单位">
-                    <option value="kg_m3">kg/m³</option>
-                    <option value="g_cm3">g/cm³</option>
-                    <option value="kg_l">kg/L</option>
-                    <option value="lb_ft3">lb/ft³</option>
+                    <option value="kg_m3">kg/m3</option>
+                    <option value="kg_l">kg/l</option>
+                    <option value="g_l">g/l</option>
+                    <option value="grain_ft3">gr./cu.ft.</option>
+                    <option value="grain_gal">gr./gal.</option>
+                    <option value="oz_ft3">oz./cu.ft.</option>
+                    <option value="oz_in3">oz./cu.in.</option>
+                    <option value="oz_gal">oz./gal.</option>
+                    <option value="lb_ft3">lb./cu.ft.</option>
+                    <option value="lb_in3">lb./cu.in.</option>
+                    <option value="lb_gal">lb./gal.</option>
                   </select>
                 </label>
                 <label class="calc-field">
-                  <span>动力黏度 μ</span>
+                  <select data-pipe="viscosityMode" aria-label="黏度类型">
+                    <option value="dynamic">Dynamic Viscosity:</option>
+                    <option value="kinematic">Kinematic Viscosity:</option>
+                  </select>
                   <input data-pipe="viscosity" value="1001.605" inputmode="decimal">
                   <select data-pipe="viscosityUnit" aria-label="动力黏度单位">
                     <option value="uPaS">10-6 kg/ms</option>
-                    <option value="mPaS">10-3 kg/ms</option>
-                    <option value="PaS">kg/ms</option>
                   </select>
                 </label>
               </div>
 
               <div class="input-section" id="pipeGasCorrectionSection">
                 <h3>气体修正</h3>
-                <label class="calc-field">入口绝压 <input data-pipe="inletPressure" value="1.01325" inputmode="decimal"><span class="calc-unit">bar(a)</span></label>
-                <label class="calc-field">入口温度 <input data-pipe="inletTemp" value="20" inputmode="decimal"><span class="calc-unit">°C</span></label>
-                <label class="calc-field">出口温度 <input data-pipe="outletTemp" value="20" inputmode="decimal"><span class="calc-unit">°C</span></label>
+                <label class="calc-field">
+                  <span>入口绝压</span>
+                  <input data-pipe="inletPressure" value="1.01325" inputmode="decimal">
+                  <select data-pipe="inletPressureUnit" aria-label="入口绝压单位">
+                    <option value="bar">bar</option>
+                    <option value="mbar">mbar</option>
+                    <option value="Pa">Pa</option>
+                    <option value="MPa">MPa</option>
+                    <option value="ata">ata</option>
+                    <option value="atm">atm</option>
+                    <option value="at">at</option>
+                    <option value="mWS">m WS</option>
+                    <option value="mmWS">mm WS</option>
+                    <option value="Torr">Torr</option>
+                    <option value="lbw_ft2">lbw./sq.ft.</option>
+                    <option value="psia">psia</option>
+                    <option value="psig">psig</option>
+                    <option value="ft_wtr">ft.wtr.</option>
+                    <option value="in_wtr">in.wtr.</option>
+                  </select>
+                </label>
+                <label class="calc-field">
+                  <span>入口温度</span>
+                  <input data-pipe="inletTemp" value="20" inputmode="decimal">
+                  <select data-pipe="inletTempUnit" aria-label="入口温度单位">
+                    <option value="C">°C</option>
+                    <option value="K">K</option>
+                    <option value="F">degF</option>
+                    <option value="R">°R</option>
+                  </select>
+                </label>
+                <label class="calc-field">
+                  <span>出口温度</span>
+                  <input data-pipe="outletTemp" value="20" inputmode="decimal">
+                  <select data-pipe="outletTempUnit" aria-label="出口温度单位">
+                    <option value="C">°C</option>
+                    <option value="K">K</option>
+                    <option value="F">degF</option>
+                    <option value="R">°R</option>
+                  </select>
+                </label>
                 <p class="model-note" id="pipeGasCorrectionNote">标准体积流量按理想气体换算到管内平均温度和入口绝压；液体或体积/质量流量可忽略此区。</p>
               </div>
 
@@ -3042,24 +3088,57 @@
       return value;
     }
 
-    function pipeViscosityToPaS(value, unit) {
-      if (unit === "PaS") return value;
-      if (unit === "mPaS") return value * 1e-3;
-      return value * 1e-6;
+    function pipeViscosityToPaS(value, unit, mode, densityKgM3) {
+      const dynamicFactors = {
+        uPaS: 1e-6,
+        micro_g_m_s: 1e-9,
+        micro_g_cm_s: 1e-7,
+        micro_PaS: 1e-6,
+        mPaS: 1e-3,
+        micro_Ns_m2: 1e-6,
+        cP: 1e-3,
+        lb_ft_hr: 0.45359237 / (0.3048 * 3600),
+        lb_ft_s: 0.45359237 / 0.3048,
+        lbf_s_ft2: 47.88025898033584
+      };
+      const kinematicFactors = {
+        micro_m2_s: 1e-6,
+        cm2_s: 1e-4,
+        mm2_s: 1e-6,
+        cSt: 1e-6,
+        sqft_hr: 0.09290304 / 3600,
+        sqft_s: 0.09290304
+      };
+      if (mode === "kinematic") {
+        return value * (kinematicFactors[unit] ?? 1e-6) * densityKgM3;
+      }
+      return value * (dynamicFactors[unit] ?? 1e-6);
     }
 
     const pipeFlowUnitsByMode = {
       volume: [
         { value: "m3h", label: "m³/h" },
+        { value: "m3min", label: "m³/min" },
         { value: "m3s", label: "m³/s" },
         { value: "lmin", label: "L/min" },
-        { value: "ls", label: "L/s" }
+        { value: "ls", label: "L/s" },
+        { value: "cuft_hr", label: "cu.ft./hr" },
+        { value: "cuft_min", label: "cu.ft./min" },
+        { value: "cuft_s", label: "cu.ft./s" },
+        { value: "bbl_hr", label: "petr.bl./hr" },
+        { value: "bbl_day", label: "petr.bl./day" },
+        { value: "gal_hr", label: "gal/hr" },
+        { value: "gal_min", label: "gal/min" }
       ],
       mass: [
         { value: "kgh", label: "kg/h" },
+        { value: "kgmin", label: "kg/min" },
         { value: "kgs", label: "kg/s" },
-        { value: "gs", label: "g/s" },
-        { value: "th", label: "t/h" }
+        { value: "lb_hr", label: "lb./hr" },
+        { value: "lb_min", label: "lb./min" },
+        { value: "lb_s", label: "lb./s" },
+        { value: "oz_min", label: "oz./min" },
+        { value: "oz_s", label: "oz./s" }
       ],
       normalVolume: [
         { value: "nm3h", label: "Nm³/h" },
@@ -3068,16 +3147,67 @@
       ]
     };
 
+    const pipeViscosityUnitsByMode = {
+      dynamic: [
+        { value: "uPaS", label: "10-6 kg/ms" },
+        { value: "micro_g_m_s", label: "10-6 g/ms" },
+        { value: "micro_g_cm_s", label: "10-6 g/cms" },
+        { value: "micro_PaS", label: "10-6 Pa s" },
+        { value: "mPaS", label: "mPa s" },
+        { value: "micro_Ns_m2", label: "10-6 Ns/m2" },
+        { value: "cP", label: "cP" },
+        { value: "lb_ft_hr", label: "lb.av./ft.hr" },
+        { value: "lb_ft_s", label: "lb.av./ft.s" },
+        { value: "lbf_s_ft2", label: "Lb.s/sq.ft." }
+      ],
+      kinematic: [
+        { value: "micro_m2_s", label: "10-6 m2/s" },
+        { value: "cm2_s", label: "cm2/s" },
+        { value: "mm2_s", label: "mm2/s" },
+        { value: "cSt", label: "cSt" },
+        { value: "sqft_hr", label: "sq.ft./hr" },
+        { value: "sqft_s", label: "sq.ft./s" }
+      ]
+    };
+
     function pipeDensityToKgM3(value, unit) {
-      if (unit === "g_cm3" || unit === "kg_l") return value * 1000;
-      if (unit === "lb_ft3") return value * 16.01846337396;
-      return value;
+      const grainKg = 0.00006479891;
+      const ounceKg = 0.028349523125;
+      const poundKg = 0.45359237;
+      const cubicFootM3 = 0.028316846592;
+      const cubicInchM3 = 0.000016387064;
+      const gallonM3 = 0.003785411784;
+      const factors = {
+        kg_m3: 1,
+        kg_l: 1000,
+        g_l: 1,
+        grain_ft3: grainKg / cubicFootM3,
+        grain_gal: grainKg / gallonM3,
+        oz_ft3: ounceKg / cubicFootM3,
+        oz_in3: ounceKg / cubicInchM3,
+        oz_gal: ounceKg / gallonM3,
+        lb_ft3: poundKg / cubicFootM3,
+        lb_in3: poundKg / cubicInchM3,
+        lb_gal: poundKg / gallonM3
+      };
+      return value * (factors[unit] ?? 1);
     }
 
     function pipeFlowValueToM3S(value, unit) {
+      const cubicFootM3 = 0.028316846592;
+      const barrelM3 = 0.158987294928;
+      const gallonM3 = 0.003785411784;
       if (unit === "m3s") return value;
+      if (unit === "m3min") return value / 60;
       if (unit === "lmin") return value * 1e-3 / 60;
       if (unit === "ls") return value * 1e-3;
+      if (unit === "cuft_hr") return value * cubicFootM3 / 3600;
+      if (unit === "cuft_min") return value * cubicFootM3 / 60;
+      if (unit === "cuft_s") return value * cubicFootM3;
+      if (unit === "bbl_hr") return value * barrelM3 / 3600;
+      if (unit === "bbl_day") return value * barrelM3 / 86400;
+      if (unit === "gal_hr") return value * gallonM3 / 3600;
+      if (unit === "gal_min") return value * gallonM3 / 60;
       if (unit === "nm3s") return value;
       if (unit === "nm3min") return value / 60;
       if (unit === "nm3h") return value / 3600;
@@ -3085,10 +3215,45 @@
     }
 
     function pipeMassFlowValueToKgS(value, unit) {
+      const poundKg = 0.45359237;
+      const ounceKg = 0.028349523125;
       if (unit === "kgs") return value;
-      if (unit === "gs") return value * 1e-3;
-      if (unit === "th") return value * 1000 / 3600;
+      if (unit === "kgmin") return value / 60;
+      if (unit === "lb_hr") return value * poundKg / 3600;
+      if (unit === "lb_min") return value * poundKg / 60;
+      if (unit === "lb_s") return value * poundKg;
+      if (unit === "oz_min") return value * ounceKg / 60;
+      if (unit === "oz_s") return value * ounceKg;
       return value / 3600;
+    }
+
+    function pipePressureToPa(value, unit) {
+      const waterColumnPaPerM = 9806.65;
+      const factors = {
+        bar: 1e5,
+        mbar: 100,
+        Pa: 1,
+        MPa: 1e6,
+        ata: 98066.5,
+        atm: 101325,
+        at: 98066.5,
+        mWS: waterColumnPaPerM,
+        mmWS: waterColumnPaPerM / 1000,
+        Torr: 133.32236842105263,
+        lbw_ft2: 47.88025898033584,
+        psia: 6894.757293168,
+        psig: 6894.757293168,
+        ft_wtr: 2989.06692,
+        in_wtr: 249.08891
+      };
+      return value * (factors[unit] ?? 1e5);
+    }
+
+    function pipeTemperatureToK(value, unit) {
+      if (unit === "K") return value;
+      if (unit === "F") return (value - 32) * 5 / 9 + 273.15;
+      if (unit === "R") return value * 5 / 9;
+      return value + 273.15;
     }
 
     function pipeUnitLabel(key) {
@@ -3142,6 +3307,8 @@
       pipeInputMap.phase.value = preset.phase;
       pipeInputMap.density.value = String(preset.density);
       pipeInputMap.densityUnit.value = preset.densityUnit;
+      pipeInputMap.viscosityMode.value = "dynamic";
+      updatePipeViscosityUnit();
       pipeInputMap.viscosity.value = String(preset.viscosity);
       pipeInputMap.viscosityUnit.value = preset.viscosityUnit;
     }
@@ -3171,6 +3338,19 @@
         : units[0].value;
     }
 
+    function updatePipeViscosityUnit() {
+      const mode = pipeInputMap.viscosityMode?.value || "dynamic";
+      const viscosityUnitSelect = pipeInputMap.viscosityUnit;
+      const units = pipeViscosityUnitsByMode[mode] || pipeViscosityUnitsByMode.dynamic;
+      const currentValue = viscosityUnitSelect.value;
+      viscosityUnitSelect.innerHTML = units
+        .map((unit) => `<option value="${unit.value}">${unit.label}</option>`)
+        .join("");
+      viscosityUnitSelect.value = units.some((unit) => unit.value === currentValue)
+        ? currentValue
+        : units[0].value;
+    }
+
     function updatePipeGasCorrectionUi() {
       const isGas = pipeInputMap.phase.value === "gas";
       pipeNormalVolumeOption.disabled = !isGas;
@@ -3181,7 +3361,7 @@
       const gasCorrectionActive = isGas && pipeInputMap.flowMode.value === "normalVolume";
       pipeGasCorrectionSection.classList.toggle("is-disabled", !gasCorrectionActive);
       pipeGasCorrectionSection.setAttribute("aria-disabled", String(!gasCorrectionActive));
-      ["inletPressure", "inletTemp", "outletTemp"].forEach((key) => {
+      ["inletPressure", "inletPressureUnit", "inletTemp", "inletTempUnit", "outletTemp", "outletTempUnit"].forEach((key) => {
         pipeInputMap[key].disabled = !gasCorrectionActive;
       });
       pipeGasCorrectionNote.textContent = gasCorrectionActive
@@ -3195,6 +3375,7 @@
 
     function collectPipeInput() {
       const elementDef = currentPipeElement();
+      const densityKgM3 = pipeDensityToKgM3(pipeNumber("density", "密度"), pipeInputMap.densityUnit.value);
       return {
         element: pipeInputMap.element.value,
         elementName: elementDef.name,
@@ -3205,9 +3386,15 @@
         flowMode: pipeInputMap.flowMode.value,
         flowValue: pipeNumber("flowValue", "流量数值"),
         flowUnit: pipeInputMap.flowUnit.value,
-        densityKgM3: pipeDensityToKgM3(pipeNumber("density", "密度"), pipeInputMap.densityUnit.value),
+        densityKgM3,
         densityUnit: pipeInputMap.densityUnit.value,
-        viscosityPaS: pipeViscosityToPaS(pipeNumber("viscosity", "动力黏度"), pipeInputMap.viscosityUnit.value),
+        viscosityMode: pipeInputMap.viscosityMode.value,
+        viscosityPaS: pipeViscosityToPaS(
+          pipeNumber("viscosity", "黏度"),
+          pipeInputMap.viscosityUnit.value,
+          pipeInputMap.viscosityMode.value,
+          densityKgM3
+        ),
         count: pipeNumber("count", "数量"),
         diameterM: pipeNumber("diameter", "管径") * 1e-3,
         secondDiameterM: pipeNumber("secondDiameter", "第二管径") * 1e-3,
@@ -3217,9 +3404,9 @@
         radiusRatio: pipeNumber("radiusRatio", "弯曲半径 R/D"),
         openAreaRatio: pipeNumber("openArea", "开孔率") / 100,
         extraZeta: pipeNumber("extraZeta", "附加局部阻力"),
-        inletPressurePa: pipeNumber("inletPressure", "入口绝压") * 1e5,
-        inletTempK: pipeNumber("inletTemp", "入口温度") + 273.15,
-        outletTempK: pipeNumber("outletTemp", "出口温度") + 273.15
+        inletPressurePa: pipePressureToPa(pipeNumber("inletPressure", "入口绝压"), pipeInputMap.inletPressureUnit.value),
+        inletTempK: pipeTemperatureToK(pipeNumber("inletTemp", "入口温度"), pipeInputMap.inletTempUnit.value),
+        outletTempK: pipeTemperatureToK(pipeNumber("outletTemp", "出口温度"), pipeInputMap.outletTempUnit.value)
       };
     }
 
@@ -3642,6 +3829,7 @@
         updatePipeElementUi();
         updatePipeGasCorrectionUi();
         updatePipeFlowUnit();
+        updatePipeViscosityUnit();
         const result = calculatePipeDrop(collectPipeInput());
         renderPipeResult(result);
         return result;
@@ -5835,8 +6023,11 @@
       input.addEventListener("change", () => {
         if (input.dataset.pipe === "mediumPreset") {
           applyPipeMediumPreset();
-        } else if (["mediumTemp", "phase", "density", "densityUnit", "viscosity", "viscosityUnit"].includes(input.dataset.pipe)) {
+        } else if (["mediumTemp", "phase", "density", "densityUnit", "viscosityMode", "viscosity", "viscosityUnit"].includes(input.dataset.pipe)) {
           pipeInputMap.mediumPreset.value = "custom";
+        }
+        if (input.dataset.pipe === "viscosityMode") {
+          updatePipeViscosityUnit();
         }
         runPipeCalculation();
       });
@@ -5847,6 +6038,9 @@
         if (input.dataset.pipe === "phase" || input.dataset.pipe === "flowMode") {
           updatePipeGasCorrectionUi();
           updatePipeFlowUnit();
+        }
+        if (input.dataset.pipe === "viscosityMode") {
+          updatePipeViscosityUnit();
         }
       });
     });
