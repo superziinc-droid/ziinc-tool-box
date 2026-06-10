@@ -2992,6 +2992,9 @@
       if (unit === "m3s") return value;
       if (unit === "lmin") return value * 1e-3 / 60;
       if (unit === "ls") return value * 1e-3;
+      if (unit === "nm3s") return value;
+      if (unit === "nm3min") return value / 60;
+      if (unit === "nm3h") return value / 3600;
       return value / 3600;
     }
 
@@ -3141,7 +3144,7 @@
       if (data.count <= 0) throw new Error("数量必须大于 0。");
       if (data.diameterM <= 0) throw new Error("管径必须大于 0。");
       if (data.secondDiameterM <= 0) throw new Error("第二管径必须大于 0。");
-      if (data.lengthM < 0) throw new Error("管长不能小于 0。");
+      if (data.element !== "heightDifference" && data.lengthM < 0) throw new Error("管长不能小于 0。");
       if (data.roughnessM < 0) throw new Error("绝对粗糙度不能小于 0。");
       if (data.angleDeg <= 0 || data.angleDeg > 180) throw new Error("角度应在 0 到 180° 之间。");
       if (data.radiusRatio <= 0) throw new Error("弯曲半径 R/D 必须大于 0。");
@@ -3194,6 +3197,7 @@
       validatePipeInput(data);
       const elementDef = data.elementDef;
       const velocityDiameterM = elementDef.velocityDiameter ? elementDef.velocityDiameter(data) : data.diameterM;
+      if (!(velocityDiameterM > 0)) throw new Error("计算基准管径必须大于 0。");
       const areaM2 = Math.PI * velocityDiameterM ** 2 / 4;
       const volumeFlowM3S = pipeVolumeFlowM3S(data);
       const velocityMS = volumeFlowM3S / areaM2;
