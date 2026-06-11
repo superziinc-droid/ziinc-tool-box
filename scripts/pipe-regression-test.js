@@ -151,7 +151,25 @@ assert(
 );
 const thickShort = calculatePipeDrop(baseData({ element: "thickOrifice", elementDef: pipeElementCatalog.thickOrifice, elementName: pipeElementCatalog.thickOrifice.name, secondDiameterM: 0.05, lengthM: 0.01 }));
 const thickLong = calculatePipeDrop(baseData({ element: "thickOrifice", elementDef: pipeElementCatalog.thickOrifice, elementName: pipeElementCatalog.thickOrifice.name, secondDiameterM: 0.05, lengthM: 0.02 }));
-approx(thickLong.totalZeta - thickShort.totalZeta, thickShort.lambda * 0.01 / 0.05, 1e-10, "thick orifice L friction term");
+approx(thickLong.totalZeta - thickShort.totalZeta, 0.02 * (0.01 / 0.05) / 0.5 ** 4, 1e-10, "thick orifice L thickness term");
+
+const thickOriginalSample = calculatePipeDrop(baseData({
+  element: "thickOrifice",
+  elementDef: pipeElementCatalog.thickOrifice,
+  elementName: pipeElementCatalog.thickOrifice.name,
+  flowValue: 0.9,
+  flowUnit: "lmin",
+  diameterM: 0.006,
+  secondDiameterM: 0.002,
+  lengthM: 0.005,
+  roughnessM: 0,
+  densityKgM3: 998.206,
+  viscosityPaS: 1001.61e-6
+}));
+approx(thickOriginalSample.velocityMS, 0.5305164769729845, 1e-12, "pressure-drop sample velocity");
+approx(thickOriginalSample.reynolds, 3172.281010053584, 1e-6, "pressure-drop sample Reynolds");
+approx(thickOriginalSample.totalZeta, 87, 5e-4, "pressure-drop sample zeta");
+approx(pipePressurePaToUnit(thickOriginalSample.totalPressureDropPa, "bar"), 0.12221012457198419, 5e-7, "pressure-drop sample pressure drop bar");
 
 setPipeInputs({ element: "orifice", diameter: 100, secondDiameter: 20, solveTarget: "secondDiameter" });
 const solvedBore = solvePipeVariableForTarget(orificeTarget, { key: "secondDiameter", label: "孔径 d", input: pipeInputMap.secondDiameter });

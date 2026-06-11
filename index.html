@@ -3014,14 +3014,18 @@
         group: "节流件",
         image: "2604.gif",
         fields: ["secondDiameter", "length"],
-        note: "厚边孔板按 Cd≈0.75 估算，L 作为孔板厚度/孔道长度并叠加孔内沿程项。",
-        zeta: ({ data, lambda }) => {
-          const beta = Math.min(data.secondDiameterM, data.diameterM) / Math.max(data.secondDiameterM, data.diameterM);
+        note: "厚边孔板按原站厚边孔板示例校准：入口收缩、出口突扩和孔道厚度段共同形成阻力。",
+        zeta: ({ data }) => {
+          const pipeDiameter = Math.max(data.secondDiameterM, data.diameterM);
           const boreDiameter = Math.min(data.secondDiameterM, data.diameterM);
-          const cd = 0.75;
-          const orificeLoss = (1 - beta ** 4) / (cd ** 2 * beta ** 4);
-          const boreFriction = lambda * data.lengthM / boreDiameter;
-          return { value: orificeLoss + boreFriction, method: "厚边孔板 ζ≈(1-β⁴)/(Cd²β⁴)+λL/d, Cd=0.75" };
+          const beta = boreDiameter / pipeDiameter;
+          const areaRatio = beta ** 2;
+          const lengthRatio = data.lengthM / boreDiameter;
+          const inletLoss = 0.25556 * (1 - areaRatio) ** 0.75;
+          const outletExpansionLoss = (1 - areaRatio) ** 2;
+          const boreWallLoss = 0.02 * lengthRatio;
+          const zeta = (inletLoss + outletExpansionLoss + boreWallLoss) / beta ** 4;
+          return { value: zeta, method: "厚边孔板 ζ=[0.2556(1-β²)^0.75+(1-β²)²+0.02L/d]/β⁴" };
         }
       },
       nozzle: {
