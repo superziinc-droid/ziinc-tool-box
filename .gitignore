@@ -2,3 +2,6 @@ ziinc-tool-box-config-*.json
 *.local.json
 .DS_Store
 Thumbs.db
+__pycache__/
+*.pyc
+tolerance_allocator_exe_v1_2/build/
