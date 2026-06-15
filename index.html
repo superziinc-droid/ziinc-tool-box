@@ -1078,6 +1078,120 @@
       min-width: 520px;
     }
 
+    .tolerance-mode-tabs {
+      display: inline-flex;
+      gap: 8px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      flex-wrap: wrap;
+    }
+
+    .tolerance-mode-button {
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--text-soft);
+      padding: 9px 16px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .tolerance-mode-button[aria-pressed="true"] {
+      background: var(--blue);
+      color: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .tolerance-panel[hidden] {
+      display: none;
+    }
+
+    .tolerance-list-builder {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .tolerance-chip-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 38px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafd;
+    }
+
+    .tolerance-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #c6dafc;
+      border-radius: 999px;
+      background: var(--blue-quiet);
+      color: var(--blue);
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .tolerance-chip button {
+      width: 18px;
+      height: 18px;
+      border: 0;
+      border-radius: 50%;
+      background: #fff;
+      color: var(--blue);
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      font-weight: 700;
+    }
+
+    .tolerance-output {
+      white-space: pre-wrap;
+      font-family: "Roboto Mono", Consolas, "Microsoft YaHei", monospace;
+      line-height: 1.65;
+    }
+
+    .tolerance-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .tolerance-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 620px;
+      font-size: 13px;
+    }
+
+    .tolerance-table th,
+    .tolerance-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .tolerance-table th {
+      color: var(--text-soft);
+      background: #f8fafd;
+      font-weight: 700;
+    }
+
+    .tolerance-table tr:last-child td {
+      border-bottom: 0;
+    }
+
     .data-chart {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -1362,6 +1476,7 @@
       <button class="nav-item" type="button" data-page-target="home" aria-current="page">首页资料</button>
       <button class="nav-item" type="button" data-page-target="units">单位转换</button>
       <button class="nav-item" type="button" data-page-target="pipe">管道压降</button>
+      <button class="nav-item" type="button" data-page-target="tolerance">公差分配</button>
       <button class="nav-item" type="button" data-page-target="hertz">赫兹接触</button>
       <button class="nav-item" type="button" data-page-target="stiffness">球-V槽刚度</button>
       <button class="nav-item" type="button" data-page-target="data">稳定性计算</button>
@@ -1749,6 +1864,245 @@
           </div>
         </section>
 
+        <section class="panel stiffness-panel" aria-label="公差分配助手" data-page-section="tolerance">
+          <div class="section-title-row">
+            <h2>公差分配助手</h2>
+            <div class="utility-actions">
+              <button class="text-button" type="button" id="copyTolerance">复制结果</button>
+              <button class="text-button" type="button" id="resetTolerance">重置</button>
+            </div>
+          </div>
+
+          <div class="tolerance-mode-tabs" role="tablist" aria-label="公差分配模式">
+            <button class="tolerance-mode-button" type="button" data-tolerance-mode="single" aria-pressed="true">单尺寸</button>
+            <button class="tolerance-mode-button" type="button" data-tolerance-mode="twoFace" aria-pressed="false">两面 Z 向</button>
+          </div>
+
+          <div class="stiffness-grid">
+            <div class="stiffness-form">
+              <div class="tolerance-panel" id="toleranceSinglePanel">
+                <div class="input-section">
+                  <h3>输入参数</h3>
+                  <label class="calc-field"><span>名义尺寸 D</span><input data-tolerance="single.nominal" value="500" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                  <label class="calc-field">
+                    <span>总允许误差</span>
+                    <input data-tolerance="single.total" value="0.08" inputmode="decimal">
+                    <select data-tolerance="single.unit" aria-label="单尺寸总允许误差单位">
+                      <option value="mm">mm</option>
+                      <option value="um">μm</option>
+                    </select>
+                  </label>
+                  <label class="calc-field">
+                    <span>配合方式</span>
+                    <select data-tolerance="single.fit" aria-label="单尺寸配合方式">
+                      <option value="间隙">间隙</option>
+                      <option value="过渡">过渡</option>
+                      <option value="过盈">过盈</option>
+                    </select>
+                    <span class="calc-unit">-</span>
+                  </label>
+                  <label class="calc-field">
+                    <span>零件材料</span>
+                    <select data-tolerance="single.material" aria-label="单尺寸零件材料"></select>
+                    <span class="calc-unit">-</span>
+                  </label>
+                  <label class="calc-field">
+                    <span>加工限制</span>
+                    <select data-tolerance="single.processLimit" aria-label="单尺寸加工方式限制">
+                      <option value="不限">不限</option>
+                      <option value="CNC">CNC</option>
+                      <option value="磨削">磨削</option>
+                      <option value="研磨">研磨</option>
+                    </select>
+                    <span class="calc-unit">-</span>
+                  </label>
+                  <label class="calc-field">
+                    <span>分配策略</span>
+                    <select data-tolerance="single.strategy" aria-label="单尺寸分配策略">
+                      <option value="保守">保守</option>
+                      <option value="标准" selected>标准</option>
+                      <option value="激进">激进</option>
+                    </select>
+                    <span class="calc-unit">-</span>
+                  </label>
+                  <label class="calc-field">
+                    <span>关键尺寸</span>
+                    <select data-tolerance="single.key" aria-label="单尺寸关键装配尺寸">
+                      <option value="是">是</option>
+                      <option value="否">否</option>
+                    </select>
+                    <span class="calc-unit">-</span>
+                  </label>
+                </div>
+
+                <div class="input-section">
+                  <h3>安全余量</h3>
+                  <label class="calc-field">
+                    <span>模式</span>
+                    <select data-tolerance="single.safetyMode" aria-label="单尺寸安全余量模式">
+                      <option value="自动">自动</option>
+                      <option value="手动百分比">手动百分比</option>
+                      <option value="手动固定值">手动固定值</option>
+                    </select>
+                    <span class="calc-unit">-</span>
+                  </label>
+                  <label class="calc-field">
+                    <span>数值</span>
+                    <input data-tolerance="single.safetyValue" value="10" inputmode="decimal">
+                    <select data-tolerance="single.safetyUnit" aria-label="单尺寸安全余量单位">
+                      <option value="um">μm</option>
+                      <option value="mm">mm</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="input-section">
+                  <h3>形位公差项目</h3>
+                  <div class="tolerance-list-builder">
+                    <select data-tolerance-geo-source="single" aria-label="单尺寸形位公差"></select>
+                    <button class="text-button" type="button" data-tolerance-add="single">添加</button>
+                    <button class="text-button" type="button" data-tolerance-clear="single">清空</button>
+                  </div>
+                  <div class="tolerance-chip-list" id="toleranceSingleList" aria-label="已选单尺寸形位公差"></div>
+                </div>
+              </div>
+
+              <div class="tolerance-panel" id="toleranceTwoFacePanel" hidden>
+                <div class="input-section">
+                  <h3>Z 向功能公差</h3>
+                  <label class="calc-field"><span>名义距离 H</span><input data-tolerance="two.nominal" value="82" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                  <label class="calc-field">
+                    <span>Z 向总误差</span>
+                    <input data-tolerance="two.total" value="0.05" inputmode="decimal">
+                    <select data-tolerance="two.unit" aria-label="Z 向总允许误差单位">
+                      <option value="mm">mm</option>
+                      <option value="um">μm</option>
+                    </select>
+                  </label>
+                  <label class="calc-field">
+                    <span>A/B 面尺寸</span>
+                    <select data-tolerance="two.sameSize" aria-label="A/B 面尺寸是否相同">
+                      <option value="是">相同</option>
+                      <option value="否">不同</option>
+                    </select>
+                    <span class="calc-unit">-</span>
+                  </label>
+                </div>
+
+                <div class="input-section">
+                  <h3>面尺寸</h3>
+                  <label class="calc-field"><span>面 A 长度 L_A</span><input data-tolerance="two.la" value="500" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                  <label class="calc-field"><span>面 A 宽度 W_A</span><input data-tolerance="two.wa" value="82" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                  <label class="calc-field" id="toleranceLbField"><span>面 B 长度 L_B</span><input data-tolerance="two.lb" value="500" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                  <label class="calc-field" id="toleranceWbField"><span>面 B 宽度 W_B</span><input data-tolerance="two.wb" value="82" inputmode="decimal"><span class="calc-unit">mm</span></label>
+                </div>
+
+                <div class="input-section">
+                  <h3>工况与策略</h3>
+                  <label class="calc-field">
+                    <span>配合方式</span>
+                    <select data-tolerance="two.fit" aria-label="两面配合方式">
+                      <option value="间隙">间隙</option>
+                      <option value="过渡">过渡</option>
+                      <option value="过盈">过盈</option>
+                    </select>
+                    <span class="calc-unit">-</span>
+                  </label>
+                  <label class="calc-field">
+                    <span>零件材料</span>
+                    <select data-tolerance="two.material" aria-label="两面零件材料"></select>
+                    <span class="calc-unit">-</span>
+                  </label>
+                  <label class="calc-field">
+                    <span>加工限制</span>
+                    <select data-tolerance="two.processLimit" aria-label="两面加工方式限制">
+                      <option value="不限">不限</option>
+                      <option value="CNC">CNC</option>
+                      <option value="磨削">磨削</option>
+                      <option value="研磨">研磨</option>
+                    </select>
+                    <span class="calc-unit">-</span>
+                  </label>
+                  <label class="calc-field">
+                    <span>分配策略</span>
+                    <select data-tolerance="two.strategy" aria-label="两面分配策略">
+                      <option value="保守">保守</option>
+                      <option value="标准" selected>标准</option>
+                      <option value="激进">激进</option>
+                    </select>
+                    <span class="calc-unit">-</span>
+                  </label>
+                  <label class="calc-field">
+                    <span>关键尺寸</span>
+                    <select data-tolerance="two.key" aria-label="两面关键装配尺寸">
+                      <option value="是">是</option>
+                      <option value="否">否</option>
+                    </select>
+                    <span class="calc-unit">-</span>
+                  </label>
+                </div>
+
+                <div class="input-section">
+                  <h3>安全余量</h3>
+                  <label class="calc-field">
+                    <span>模式</span>
+                    <select data-tolerance="two.safetyMode" aria-label="两面安全余量模式">
+                      <option value="自动">自动</option>
+                      <option value="手动百分比">手动百分比</option>
+                      <option value="手动固定值">手动固定值</option>
+                    </select>
+                    <span class="calc-unit">-</span>
+                  </label>
+                  <label class="calc-field">
+                    <span>数值</span>
+                    <input data-tolerance="two.safetyValue" value="10" inputmode="decimal">
+                    <select data-tolerance="two.safetyUnit" aria-label="两面安全余量单位">
+                      <option value="um">μm</option>
+                      <option value="mm">mm</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="input-section">
+                  <h3>面 A 自身形位</h3>
+                  <div class="tolerance-list-builder">
+                    <select data-tolerance-geo-source="faceA" aria-label="面 A 形位公差"></select>
+                    <button class="text-button" type="button" data-tolerance-add="faceA">添加</button>
+                    <button class="text-button" type="button" data-tolerance-clear="faceA">清空</button>
+                  </div>
+                  <div class="tolerance-chip-list" id="toleranceFaceAList" aria-label="已选面 A 形位公差"></div>
+                </div>
+
+                <div class="input-section">
+                  <h3>面 B 自身形位</h3>
+                  <div class="tolerance-list-builder">
+                    <select data-tolerance-geo-source="faceB" aria-label="面 B 形位公差"></select>
+                    <button class="text-button" type="button" data-tolerance-add="faceB">添加</button>
+                    <button class="text-button" type="button" data-tolerance-clear="faceB">清空</button>
+                  </div>
+                  <div class="tolerance-chip-list" id="toleranceFaceBList" aria-label="已选面 B 形位公差"></div>
+                </div>
+
+                <div class="input-section">
+                  <h3>两面关联形位</h3>
+                  <div class="tolerance-list-builder">
+                    <select data-tolerance-geo-source="relation" aria-label="两面关联形位公差"></select>
+                    <button class="text-button" type="button" data-tolerance-add="relation">添加</button>
+                    <button class="text-button" type="button" data-tolerance-clear="relation">清空</button>
+                  </div>
+                  <div class="tolerance-chip-list" id="toleranceRelationList" aria-label="已选两面关联形位公差"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stiffness-results">
+              <div class="result-cards" id="toleranceCards"></div>
+              <div class="tolerance-table-wrap" id="toleranceTableWrap"></div>
+              <div class="detail-text tolerance-output" id="toleranceSummary">调整参数后自动计算公差分配结果。</div>
+            </div>
+          </div>
+        </section>
+
         <section class="panel stiffness-panel" aria-label="赫兹接触计算" data-page-section="hertz">
           <div class="section-title-row">
             <h2>赫兹接触计算</h2>
@@ -2004,6 +2358,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <script src="./tolerance_allocator_web.js"></script>
   <script>
     const categories = {
       length: {
